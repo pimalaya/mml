@@ -35,6 +35,9 @@
         in
         {
           default = pkgs.mkShell {
+            nativeBuildInputs = with pkgs; [
+              pkg-config
+            ];
             buildInputs = with pkgs; [
               # Nix
               rnix-lsp

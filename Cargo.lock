@@ -1461,7 +1461,8 @@ dependencies = [
 [[package]]
 name = "mml-lib"
 version = "0.1.0"
-source = "git+https://git.sr.ht/~soywod/pimalaya#078b88371df44f3b64ddc45e25d317a67eb5df22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "660e8feeb44bc9b09f20a93f4d7ae7ca853034d2ff4009bb94b4b299837fd4be"
 dependencies = [
  "async-recursion",
  "chumsky",
@@ -1470,8 +1471,8 @@ dependencies = [
  "mail-builder",
  "mail-parser",
  "nanohtml2text",
+ "pgp-lib",
  "pimalaya-keyring",
- "pimalaya-pgp",
  "pimalaya-process",
  "pimalaya-secret",
  "shellexpand 2.1.2",
@@ -1721,19 +1722,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "pimalaya-keyring"
-version = "0.0.6-beta"
-source = "git+https://git.sr.ht/~soywod/pimalaya#078b88371df44f3b64ddc45e25d317a67eb5df22"
-dependencies = [
- "keyring",
- "log",
- "thiserror",
-]
-
-[[package]]
-name = "pimalaya-pgp"
+name = "pgp-lib"
 version = "0.0.1"
-source = "git+https://git.sr.ht/~soywod/pimalaya#078b88371df44f3b64ddc45e25d317a67eb5df22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c819c823fe6bf0fd218ba918d2fd67f26db43850733408dcff2cb9f6c0570f42"
 dependencies = [
  "async-recursion",
  "futures",
@@ -1751,9 +1743,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pimalaya-keyring"
+version = "0.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac7b7da6f9ce8a647ab83dda8cfd657dc0acb62e6ac1edd95f3b434341fadb03"
+dependencies = [
+ "keyring",
+ "log",
+ "thiserror",
+]
+
+[[package]]
 name = "pimalaya-process"
-version = "0.0.6-beta"
-source = "git+https://git.sr.ht/~soywod/pimalaya#078b88371df44f3b64ddc45e25d317a67eb5df22"
+version = "0.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a9d1e1ab6334d4e4d06613cd65f3fed34e5d2d7b1488f3d1a0d2fdffdba5d1c"
 dependencies = [
  "log",
  "thiserror",
@@ -1762,8 +1766,9 @@ dependencies = [
 
 [[package]]
 name = "pimalaya-secret"
-version = "0.0.6-beta"
-source = "git+https://git.sr.ht/~soywod/pimalaya#078b88371df44f3b64ddc45e25d317a67eb5df22"
+version = "0.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "966d3dd6e8d9dd39ac80c20597d68b47eb5170c968fbe3ebbb425fca530037f6"
 dependencies = [
  "log",
  "pimalaya-keyring",
