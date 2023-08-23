@@ -1,39 +1,35 @@
-# ⏳ Comodoro [![Crates.io](https://img.shields.io/crates/v/comodoro)](https://crates.io/crates/comodoro) [![Matrix](https://img.shields.io/matrix/pimalaya.comodoro:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya.comodoro:matrix.org)
+# MIME Meta Language [![Crates.io](https://img.shields.io/crates/v/mml-cli)](https://crates.io/crates/mml-cli) [![Matrix](https://img.shields.io/matrix/pimalaya.mml:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya.mml:matrix.org)
 
-https://pimalaya.org/comodoro/
+https://pimalaya.org/mml/
 
-CLI to manage your time, based on the [pimalaya-time](https://sr.ht/~soywod/pimalaya/) library.
+CLI to deal with Emacs MIME message Meta Language (MML), based on [mml-lib](https://sr.ht/~soywod/pimalaya/).
 
 *Disclaimer: the project is under active development, do not use in production before the `v1.0.0`.*
 
 ## Features
 
-- Centralized server timer controllable by multiple clients at the same time
-- Multi protocols (only TCP for now, but you can build your own)
-- Cycles customizable via config file (Pomodoro style, 52/17 style, custom)
-- Server and timer hooks customizable via config file
-- …
+TODO
 
 ## Installation
 
 <table align="center">
 <tr>
 <td width="50%">
-<a href="https://repology.org/project/comodoro/versions">
-<img src="https://repology.org/badge/vertical-allrepos/comodoro.svg" alt="Packaging status" />
+<a href="https://repology.org/project/mml/versions">
+<img src="https://repology.org/badge/vertical-allrepos/mml.svg" alt="Packaging status" />
 </a>
 </td>
 <td width="50%">
 
 ```bash
 # Cargo
-$ cargo install comodoro
+$ cargo install mml-cli
 
 # Nix
-$ nix-env -i comodoro
+$ nix-env -i mml
 ```
 
-*See the [documentation](https://pimalaya.org/comodoro/cli/installation/index.html) for other installation methods.*
+*See the [documentation](https://pimalaya.org/mml/cli/installation/index.html) for other installation methods.*
 
 </td>
 </tr>
@@ -41,7 +37,7 @@ $ nix-env -i comodoro
 
 ## Configuration
 
-Please read the [documentation](https://pimalaya.org/comodoro/cli/configuration/index.html).
+Please read the [documentation](https://pimalaya.org/mml/cli/configuration/index.html).
 
 ## Contributing
 
@@ -55,7 +51,7 @@ If you want to **subscribe** to the mailing list, please send an email at [~soyw
 
 If you want to **unsubscribe** to the mailing list, please send an email at [~soywod/pimalaya+unsubscribe@lists.sr.ht](mailto:~soywod/pimalaya+unsubscribe@lists.sr.ht).
 
-If you want to **discuss** about the project, feel free to join the [Matrix](https://matrix.org/) workspace [#pimalaya.comodoro](https://matrix.to/#/#pimalaya.comodoro:matrix.org) or contact me directly [@soywod](https://matrix.to/#/@soywod:matrix.org).
+If you want to **discuss** about the project, feel free to join the [Matrix](https://matrix.org/) workspace [#pimalaya.mml](https://matrix.to/#/#pimalaya.mml:matrix.org) or contact me directly [@soywod](https://matrix.to/#/@soywod:matrix.org).
 
 ## Sponsoring
 

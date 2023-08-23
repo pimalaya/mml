@@ -36,12 +36,16 @@
         {
           default = pkgs.mkShell {
             buildInputs = with pkgs; [
-              # Nix env
+              # Nix
               rnix-lsp
               nixpkgs-fmt
 
-              # Rust env
+              # Rust
               rust-toolchain
+
+              # GPG
+              gnupg
+              gpgme
             ];
           };
         };
