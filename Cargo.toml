@@ -1,0 +1,55 @@
+[package]
+name = "mml-cli"
+description = "CLI to deal with Emacs MIME message Meta Language (MML)."
+version = "0.1.0"
+authors = ["soywod <clement.douin@posteo.net>"]
+edition = "2021"
+license = "MIT"
+categories = ["command-line-utilities", "email", "text-processing"]
+keywords = ["email", "mime", "message", "mml", "emacs"]
+homepage = "https://pimalaya.org/mml/"
+documentation = "https://pimalaya.org/mml/"
+repository = "https://github.com/soywod/mml"
+metadata.docs.rs.all-features = true
+
+[[bin]]
+name = "mml"
+path = "src/main.rs"
+
+[features]
+default = ["compiler", "interpreter", "pgp-cmds"]
+compiler = ["mml-lib/compiler"]
+interpreter = ["mml-lib/interpreter"]
+pgp = ["mml-lib/pgp"]
+pgp-cmds = ["mml-lib/pgp-cmds"]
+pgp-gpg = ["mml-lib/pgp-gpg"]
+pgp-native = ["mml-lib/pgp-native"]
+
+[dev-dependencies]
+tempfile = "3.3"
+
+[dependencies]
+# error
+anyhow = "1.0"
+
+# log
+log = "0.4"
+env_logger = "0.10"
+
+# async
+tokio.version = "1.32"
+tokio.default-features = false
+tokio.features = ["fs", "io-util", "io-std", "macros", "rt-multi-thread"]
+
+# io
+atty = "0.2"
+shellexpand = "3.1"
+
+# cli
+clap = "4.3"
+clap_complete = "4.3"
+clap_mangen = "0.2"
+
+# mml
+mml-lib.git = "https://git.sr.ht/~soywod/pimalaya"
+mml-lib.default-features = false
