@@ -8,7 +8,7 @@ use env_logger::{Builder as LoggerBuilder, Env, DEFAULT_FILTER_ENV};
 use std::env;
 
 fn create_app() -> Command {
-    Command::new(env!("CARGO_PKG_NAME"))
+    Command::new("mml")
         .version(env!("CARGO_PKG_VERSION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         .author(env!("CARGO_PKG_AUTHORS"))
