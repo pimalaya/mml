@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2023-08-27
+
+### Fixed
+
+- Fixed missing angles when compiling MML containing one of those headers: Message-ID, References, In-Reply-To, Return-Path, Content-ID, Resent-Message-ID.
+- Fixed windows build.
+
+### Removed
+
+- Removed `pgp-cmds` feature from default ones.
+
 ## [0.1.0] - 2023-08-23
 
 ### Added
@@ -15,5 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [mml-lib]: https://crates.io/crates/mml-lib
 
-[Unreleased]: https://github.com/soywod/mml/compare/v0.1.0...master
+[Unreleased]: https://github.com/soywod/mml/compare/v0.1.1...master
+[0.1.1]: https://github.com/soywod/mml/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/soywod/mml/releases/tag/v0.1.0

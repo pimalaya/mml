@@ -1,7 +1,7 @@
 [package]
 name = "mml-cli"
 description = "CLI to deal with Emacs MIME message Meta Language (MML)."
-version = "0.1.0"
+version = "0.1.1"
 authors = ["soywod <clement.douin@posteo.net>"]
 edition = "2021"
 license = "MIT"
@@ -17,7 +17,7 @@ name = "mml"
 path = "src/main.rs"
 
 [features]
-default = ["compiler", "interpreter", "pgp-cmds"]
+default = ["compiler", "interpreter"]
 compiler = ["mml-lib/compiler"]
 interpreter = ["mml-lib/interpreter"]
 pgp = ["mml-lib/pgp"]
@@ -51,5 +51,5 @@ clap_complete = "4.3"
 clap_mangen = "0.2"
 
 # mml
-mml-lib.version = "=0.1.0"
+mml-lib.version = "=0.1.2"
 mml-lib.default-features = false
