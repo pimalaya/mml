@@ -1299,6 +1299,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "keyring-lib"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8dcc9433b6eaf33f2f6a8d3a53b598a5d0b8be224c41bd98d1ec936ef4d02d69"
+dependencies = [
+ "keyring",
+ "log",
+ "thiserror",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1443,7 +1454,7 @@ dependencies = [
 
 [[package]]
 name = "mml-cli"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "atty",
@@ -1460,21 +1471,21 @@ dependencies = [
 
 [[package]]
 name = "mml-lib"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4c771c28947e466f8e1fd64ec46ff771bedb127afa745311631490ed6902e15"
+checksum = "038d2ad47137f03e0650d930d6798228528dfb2df15b1b3b80b403c097e8b95d"
 dependencies = [
  "async-recursion",
  "chumsky",
  "gpgme",
+ "keyring-lib",
  "log",
  "mail-builder",
  "mail-parser",
  "nanohtml2text",
  "pgp-lib",
- "pimalaya-keyring",
- "pimalaya-process",
- "pimalaya-secret",
+ "process-lib",
+ "secret-lib",
  "shellexpand 2.1.2",
  "thiserror",
  "tree_magic",
@@ -1723,9 +1734,9 @@ dependencies = [
 
 [[package]]
 name = "pgp-lib"
-version = "0.0.1"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c819c823fe6bf0fd218ba918d2fd67f26db43850733408dcff2cb9f6c0570f42"
+checksum = "6d61233a437ba3de6396593cb27fda4e48ba7c7415756caffe9f9d5d0d07378c"
 dependencies = [
  "async-recursion",
  "futures",
@@ -1740,40 +1751,6 @@ dependencies = [
  "tokio",
  "url",
  "z-base-32",
-]
-
-[[package]]
-name = "pimalaya-keyring"
-version = "0.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac7b7da6f9ce8a647ab83dda8cfd657dc0acb62e6ac1edd95f3b434341fadb03"
-dependencies = [
- "keyring",
- "log",
- "thiserror",
-]
-
-[[package]]
-name = "pimalaya-process"
-version = "0.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a9d1e1ab6334d4e4d06613cd65f3fed34e5d2d7b1488f3d1a0d2fdffdba5d1c"
-dependencies = [
- "log",
- "thiserror",
- "tokio",
-]
-
-[[package]]
-name = "pimalaya-secret"
-version = "0.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "966d3dd6e8d9dd39ac80c20597d68b47eb5170c968fbe3ebbb425fca530037f6"
-dependencies = [
- "log",
- "pimalaya-keyring",
- "pimalaya-process",
- "thiserror",
 ]
 
 [[package]]
@@ -1843,6 +1820,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b63bdb0cd06f1f4dedf69b254734f9b45af66e4a031e42a7480257d9898b435"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "process-lib"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe824234b824573ff3a80ddf3a6b19e6ffba966798d071f280723ee02a7273ce"
+dependencies = [
+ "log",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -2122,6 +2110,18 @@ dependencies = [
  "pkcs8",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "secret-lib"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d46e99ae858a1978ec3e6e887966514900229fc0df99935a2c61102854f9195e"
+dependencies = [
+ "keyring-lib",
+ "log",
+ "process-lib",
+ "thiserror",
 ]
 
 [[package]]

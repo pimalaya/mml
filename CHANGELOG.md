@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2023-08-27
+
+### Changed
+
+- Bumped `mml-lib@v0.2.0`.
+- Renamed cargo feature `pgp-cmds` to `pgp-commands`.
+
+### Fixed
+
+- Fixed wrong main command name [patch#44036].
+
 ## [0.1.1] - 2023-08-27
 
 ### Fixed
@@ -26,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [mml-lib]: https://crates.io/crates/mml-lib
 
-[Unreleased]: https://github.com/soywod/mml/compare/v0.1.1...master
+[patch#44036]: https://lists.sr.ht/~soywod/pimalaya/patches/44036
+
+[Unreleased]: https://github.com/soywod/mml/compare/v0.2.0...master
+[0.2.0]: https://github.com/soywod/mml/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/soywod/mml/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/soywod/mml/releases/tag/v0.1.0

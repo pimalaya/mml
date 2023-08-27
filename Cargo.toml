@@ -1,15 +1,15 @@
 [package]
 name = "mml-cli"
 description = "CLI to deal with Emacs MIME message Meta Language (MML)."
-version = "0.1.1"
+version = "0.2.0"
 authors = ["soywod <clement.douin@posteo.net>"]
 edition = "2021"
 license = "MIT"
 categories = ["command-line-utilities", "email", "text-processing"]
 keywords = ["email", "mime", "message", "mml", "emacs"]
-homepage = "https://pimalaya.org/mml/"
+homepage = "https://pimalaya.org/"
 documentation = "https://pimalaya.org/mml/"
-repository = "https://github.com/soywod/mml"
+repository = "https://github.com/soywod/mml/"
 metadata.docs.rs.all-features = true
 
 [[bin]]
@@ -21,35 +21,48 @@ default = ["compiler", "interpreter"]
 compiler = ["mml-lib/compiler"]
 interpreter = ["mml-lib/interpreter"]
 pgp = ["mml-lib/pgp"]
-pgp-cmds = ["mml-lib/pgp-cmds"]
+pgp-commands = ["mml-lib/pgp-commands"]
 pgp-gpg = ["mml-lib/pgp-gpg"]
 pgp-native = ["mml-lib/pgp-native"]
 
-[dev-dependencies]
-tempfile = "3.3"
+[dev-dependencies.tempfile]
+version = "3.3"
 
-[dependencies]
 # error
-anyhow = "1.0"
+[dependencies.anyhow]
+version = "1.0"
 
 # log
-log = "0.4"
-env_logger = "0.10"
+[dependencies.log]
+version = "0.4"
+
+[dependencies.env_logger]
+version = "0.10"
 
 # async
-tokio.version = "1.32"
-tokio.default-features = false
-tokio.features = ["fs", "io-util", "io-std", "macros", "rt-multi-thread"]
+[dependencies.tokio]
+version = "1.32"
+default-features = false
+features = ["fs", "io-util", "io-std", "macros", "rt-multi-thread"]
 
 # io
-atty = "0.2"
-shellexpand = "3.1"
+[dependencies.atty]
+version = "0.2"
+
+[dependencies.shellexpand]
+version = "3.1"
 
 # cli
-clap = "4.3"
-clap_complete = "4.3"
-clap_mangen = "0.2"
+[dependencies.clap]
+version = "4.3"
+
+[dependencies.clap_complete]
+version = "4.3"
+
+[dependencies.clap_mangen]
+version = "0.2"
 
 # mml
-mml-lib.version = "=0.1.2"
-mml-lib.default-features = false
+[dependencies.mml-lib]
+version = "=0.2.0"
+default-features = false
