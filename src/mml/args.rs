@@ -4,138 +4,83 @@
 )]
 
 use anyhow::Result;
-use atty::Stream;
-use clap::{Arg, ArgMatches, Command};
-use log::{debug, warn};
+use clap::Parser;
+use log::warn;
 use shellexpand_utils::try_shellexpand_path;
-use std::{ffi::OsStr, path::PathBuf};
-use tokio::{
+use std::{
     fs,
-    io::{self, AsyncBufReadExt, BufReader},
+    io::{self, BufRead, BufReader},
+    path::PathBuf,
 };
 
-const ARG_RAW: &str = "raw";
-const ARG_PATH_OR_RAW: &str = "path-or-raw";
-const CMD_COMPILE: &str = "compile";
-const CMD_INTERPRET: &str = "interpret";
+pub type MmlMessage = String;
+pub type MimeMessage = String;
 
-type MmlMessage = String;
-type MimeMessage = String;
-
-/// Represents the server commands.
-#[derive(Debug, PartialEq, Eq)]
-pub enum Cmd {
-    #[cfg(feature = "compiler")]
-    Compile(MmlMessage),
-    #[cfg(feature = "interpreter")]
-    Interpret(MimeMessage),
+/// Compile the given MML message to a valid MIME message
+#[cfg(feature = "compiler")]
+#[derive(Parser, Debug)]
+pub struct CompileCommand {
+    /// Read the mssage from the given file path.
+    #[arg(value_parser = parse_mml)]
+    mml: Option<MmlMessage>,
 }
 
-/// Represents the server command matcher.
-pub async fn matches(m: &ArgMatches) -> Result<Option<Cmd>> {
-    #[cfg(feature = "compiler")]
-    if let Some(ref m) = m.subcommand_matches(CMD_COMPILE) {
-        debug!("compile MML message command matched");
-
-        let mml = match parse_path_or_raw_arg(m) {
-            Some(mml) => match try_shellexpand_path(mml) {
-                Ok(path) => fs::read_to_string(PathBuf::from(path)).await?,
-                Err(err) => {
-                    warn!("{err}");
-                    warn!("invalid path, processing it as raw MML message");
-                    format_str(mml)
-                }
-            },
-            None if atty::is(Stream::Stdin) => format_str(&parse_raw_arg(m)),
-            None => format_stdin().await,
-        };
-
-        return Ok(Some(Cmd::Compile(mml)));
+#[cfg(feature = "compiler")]
+impl CompileCommand {
+    /// Return the command-line provided message or read one from stdin.
+    pub fn mml(self) -> MmlMessage {
+        match self.mml {
+            Some(mml) => mml,
+            None => format_stdin(),
+        }
     }
+}
 
-    #[cfg(feature = "interpreter")]
-    if let Some(ref m) = m.subcommand_matches(CMD_INTERPRET) {
-        debug!("interpret MIME message command matched");
+/// Interpret the given MIME message as a MML message
+#[cfg(feature = "interpreter")]
+#[derive(Parser, Debug)]
+pub struct InterpreterCommand {
+    /// Read the mssage from the given file path.
+    #[arg(value_parser = parse_mime)]
+    mime: Option<MimeMessage>,
+}
 
-        let mime = match parse_path_or_raw_arg(m) {
-            Some(mime) => match try_shellexpand_path(mime) {
-                Ok(path) => fs::read_to_string(PathBuf::from(path)).await?,
-                Err(err) => {
-                    warn!("{err}");
-                    warn!("invalid path, processing it as raw MIME message");
-                    format_str(mime)
-                }
-            },
-            None if atty::is(Stream::Stdin) => format_str(&parse_raw_arg(m)),
-            None => format_stdin().await,
-        };
-
-        return Ok(Some(Cmd::Interpret(mime)));
+#[cfg(feature = "interpreter")]
+impl InterpreterCommand {
+    /// Return the command-line provided message or read one from stdin.
+    pub fn mime(self) -> MimeMessage {
+        match self.mime {
+            Some(mime) => mime,
+            None => format_stdin(),
+        }
     }
-
-    Ok(None)
 }
 
-/// Represents the email raw argument.
-pub fn path_or_raw_arg() -> Arg {
-    Arg::new(ARG_PATH_OR_RAW)
-        .help("Take data from the given file path or from the argument itself")
-        .long_help(
-            "Take data from the given file path or from the argument itself.
+#[cfg(feature = "compiler")]
+fn parse_mml(raw: &str) -> Result<MmlMessage, String> {
+    let mml = match try_shellexpand_path(raw) {
+        Ok(path) => fs::read_to_string(PathBuf::from(path)).map_err(|e| e.to_string())?,
+        Err(err) => {
+            warn!("{err}");
+            warn!("invalid path, processing it as raw MML message");
+            format_str(raw)
+        }
+    };
 
-If the argument points to a valid file, its content is used.
-Otherwise the argument is treated as raw data.",
-        )
+    Ok(mml)
 }
 
-/// Represents the email raw argument parser.
-pub fn parse_path_or_raw_arg(m: &ArgMatches) -> Option<&str> {
-    m.get_one::<String>(ARG_PATH_OR_RAW).map(String::as_str)
-}
-
-/// Represents the email raw argument.
-pub fn raw_arg() -> Arg {
-    Arg::new(ARG_RAW)
-        .help("Take data from the standard input or from the argument itself")
-        .long_help(
-            "Take data from the standard input or from the argument itself.
-
-If the current terminal is considered interactive, take data from stdin.
-Otherwise all arguments after -- are treated as raw data.",
-        )
-        .raw(true)
-}
-
-/// Represents the email raw argument parser.
-pub fn parse_raw_arg(m: &ArgMatches) -> String {
-    m.get_raw(ARG_RAW)
-        .map(|arg| {
-            arg.flat_map(OsStr::to_str)
-                .fold(String::new(), |mut args, arg| {
-                    if !args.is_empty() {
-                        args.push(' ')
-                    }
-                    args.push_str(arg);
-                    args
-                })
-        })
-        .unwrap_or_default()
-}
-
-/// Represents the client subcommands.
-pub fn subcmds() -> Vec<Command> {
-    vec![
-        #[cfg(feature = "compiler")]
-        Command::new(CMD_COMPILE)
-            .about("Compile the given MML message to a valid MIME message")
-            .arg(path_or_raw_arg())
-            .arg(raw_arg()),
-        #[cfg(feature = "interpreter")]
-        Command::new(CMD_INTERPRET)
-            .about("Interpret the given MIME message as a MML message")
-            .arg(path_or_raw_arg())
-            .arg(raw_arg()),
-    ]
+#[cfg(feature = "interpreter")]
+fn parse_mime(raw: &str) -> Result<MimeMessage, String> {
+    let mime = match try_shellexpand_path(raw) {
+        Ok(path) => fs::read_to_string(PathBuf::from(path)).map_err(|e| e.to_string())?,
+        Err(err) => {
+            warn!("{err}");
+            warn!("invalid path, processing it as raw MIME message");
+            format_str(raw)
+        }
+    };
+    Ok(mime)
 }
 
 fn format_str(input: &str) -> String {
@@ -152,11 +97,11 @@ fn format_str(input: &str) -> String {
     output
 }
 
-async fn format_stdin() -> String {
+fn format_stdin() -> String {
     let mut lines = BufReader::new(io::stdin()).lines();
     let mut output = String::new();
 
-    while let Ok(Some(ref line)) = lines.next_line().await {
+    while let Some(Ok(ref line)) = lines.next() {
         output.push_str(line);
         output.push('\r');
         output.push('\n');

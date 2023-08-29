@@ -3,21 +3,30 @@ mod man;
 mod mml;
 
 use anyhow::Result;
-use clap::Command;
+use clap::{CommandFactory, Parser, Subcommand};
 use env_logger::{Builder as LoggerBuilder, Env, DEFAULT_FILTER_ENV};
-use std::env;
 
-fn create_app() -> Command {
-    Command::new("mml")
-        .version(env!("CARGO_PKG_VERSION"))
-        .about(env!("CARGO_PKG_DESCRIPTION"))
-        .author(env!("CARGO_PKG_AUTHORS"))
-        .propagate_version(true)
-        .infer_subcommands(true)
-        .arg_required_else_help(true)
-        .subcommand(compl::args::subcmd())
-        .subcommand(man::args::subcmd())
-        .subcommands(mml::args::subcmds())
+#[cfg(feature = "compiler")]
+use crate::mml::args::CompileCommand;
+#[cfg(feature = "interpreter")]
+use crate::mml::args::InterpreterCommand;
+use crate::{compl::args::GenerateCompletionCommand, man::args::GenerateManCommand};
+
+#[derive(Parser, Debug)]
+#[command(name= "mml", author, version, about, long_about = None, propagate_version = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    Completion(GenerateCompletionCommand),
+    Man(GenerateManCommand),
+    #[cfg(feature = "compiler")]
+    Compile(CompileCommand),
+    #[cfg(feature = "interpreter")]
+    Interpret(InterpreterCommand),
 }
 
 #[tokio::main]
@@ -27,29 +36,13 @@ async fn main() -> Result<()> {
         .format_timestamp(None)
         .init();
 
-    let app = create_app();
-    let m = app.get_matches();
-
-    if let Some(compl::args::Cmd::Generate(shell)) = compl::args::matches(&m)? {
-        return compl::handlers::generate(create_app(), shell);
-    }
-
-    if let Some(man::args::Cmd::GenerateAll(dir)) = man::args::matches(&m)? {
-        return man::handlers::generate(dir, create_app());
-    }
-
-    // finally check mml commands
-    match mml::args::matches(&m).await? {
+    let cli = Cli::parse();
+    match cli.command {
+        Commands::Completion(cmd) => compl::handlers::generate(Cli::command(), cmd.shell),
+        Commands::Man(cmd) => man::handlers::generate(cmd.dir, Cli::command()),
         #[cfg(feature = "compiler")]
-        Some(mml::args::Cmd::Compile(mml)) => {
-            return mml::handlers::compile(mml).await;
-        }
+        Commands::Compile(cmd) => mml::handlers::compile(cmd.mml()).await,
         #[cfg(feature = "interpreter")]
-        Some(mml::args::Cmd::Interpret(mime)) => {
-            return mml::handlers::interpret(mime).await;
-        }
-        _ => (),
+        Commands::Interpret(cmd) => mml::handlers::interpret(cmd.mime()).await,
     }
-
-    Ok(())
 }

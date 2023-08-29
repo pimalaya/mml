@@ -55,6 +55,7 @@ version = "0.1.0"
 # cli
 [dependencies.clap]
 version = "4.3"
+features = ["derive"]
 
 [dependencies.clap_complete]
 version = "4.3"
