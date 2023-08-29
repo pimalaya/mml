@@ -49,8 +49,8 @@ features = ["fs", "io-util", "io-std", "macros", "rt-multi-thread"]
 [dependencies.atty]
 version = "0.2"
 
-[dependencies.shellexpand]
-version = "3.1"
+[dependencies.shellexpand-utils]
+version = "0.1.0"
 
 # cli
 [dependencies.clap]
@@ -64,5 +64,5 @@ version = "0.2"
 
 # mml
 [dependencies.mml-lib]
-version = "=0.2.0"
+version = "=0.2.3"
 default-features = false

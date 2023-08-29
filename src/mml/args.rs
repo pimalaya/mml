@@ -3,10 +3,11 @@
     allow(dead_code, unused_imports)
 )]
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use atty::Stream;
 use clap::{Arg, ArgMatches, Command};
 use log::{debug, warn};
+use shellexpand_utils::try_shellexpand_path;
 use std::{ffi::OsStr, path::PathBuf};
 use tokio::{
     fs,
@@ -37,7 +38,7 @@ pub async fn matches(m: &ArgMatches) -> Result<Option<Cmd>> {
         debug!("compile MML message command matched");
 
         let mml = match parse_path_or_raw_arg(m) {
-            Some(mml) => match shellexpand_full(mml) {
+            Some(mml) => match try_shellexpand_path(mml) {
                 Ok(path) => fs::read_to_string(PathBuf::from(path)).await?,
                 Err(err) => {
                     warn!("{err}");
@@ -57,7 +58,7 @@ pub async fn matches(m: &ArgMatches) -> Result<Option<Cmd>> {
         debug!("interpret MIME message command matched");
 
         let mime = match parse_path_or_raw_arg(m) {
-            Some(mime) => match shellexpand_full(mime) {
+            Some(mime) => match try_shellexpand_path(mime) {
                 Ok(path) => fs::read_to_string(PathBuf::from(path)).await?,
                 Err(err) => {
                     warn!("{err}");
@@ -135,18 +136,6 @@ pub fn subcmds() -> Vec<Command> {
             .arg(path_or_raw_arg())
             .arg(raw_arg()),
     ]
-}
-
-fn shellexpand_full(path_or_content: &str) -> Result<PathBuf> {
-    let path_str = shellexpand::full(path_or_content)?;
-    let path_str = path_str.as_ref();
-    let path = PathBuf::from(path_str);
-
-    if path.is_file() {
-        Ok(path)
-    } else {
-        Err(anyhow!("cannot read file at path {path_str:?}"))
-    }
 }
 
 fn format_str(input: &str) -> String {
