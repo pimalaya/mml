@@ -6,12 +6,6 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser, Subcommand};
 use env_logger::{Builder as LoggerBuilder, Env, DEFAULT_FILTER_ENV};
 
-#[cfg(feature = "compiler")]
-use crate::mml::args::CompileCommand;
-#[cfg(feature = "interpreter")]
-use crate::mml::args::InterpreterCommand;
-use crate::{compl::args::GenerateCompletionCommand, man::args::GenerateManCommand};
-
 #[derive(Parser, Debug)]
 #[command(name= "mml", author, version, about, long_about = None, propagate_version = true)]
 struct Cli {
@@ -21,12 +15,12 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    Completion(GenerateCompletionCommand),
-    Man(GenerateManCommand),
+    Completion(compl::args::GenerateCompletionCommand),
+    Man(man::args::GenerateManCommand),
     #[cfg(feature = "compiler")]
-    Compile(CompileCommand),
+    Compile(mml::compiler::args::CompileCommand),
     #[cfg(feature = "interpreter")]
-    Interpret(InterpreterCommand),
+    Interpret(mml::interpreter::args::InterpretCommand),
 }
 
 #[tokio::main]
@@ -36,13 +30,12 @@ async fn main() -> Result<()> {
         .format_timestamp(None)
         .init();
 
-    let cli = Cli::parse();
-    match cli.command {
+    match Cli::parse().command {
         Commands::Completion(cmd) => compl::handlers::generate(Cli::command(), cmd.shell),
         Commands::Man(cmd) => man::handlers::generate(cmd.dir, Cli::command()),
         #[cfg(feature = "compiler")]
-        Commands::Compile(cmd) => mml::handlers::compile(cmd.mml()).await,
+        Commands::Compile(cmd) => mml::compiler::handlers::compile(cmd.mml()).await,
         #[cfg(feature = "interpreter")]
-        Commands::Interpret(cmd) => mml::handlers::interpret(cmd.mime()).await,
+        Commands::Interpret(cmd) => mml::interpreter::handlers::interpret(cmd.mime()).await,
     }
 }

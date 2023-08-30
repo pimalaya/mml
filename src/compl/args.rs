@@ -5,7 +5,7 @@
 use clap::Parser;
 use clap_complete::Shell;
 
-/// Generates the completion script for the given shell.
+/// Generate the completion script for the given shell.
 #[derive(Parser, Debug)]
 pub struct GenerateCompletionCommand {
     pub shell: Shell,
