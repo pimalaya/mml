@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2023-08-30
+
+### Changed
+
+- Improved shell expansion.
+- Use `clap` derive feature for parsing arguments. [patch#44147]
+
 ## [0.2.0] - 2023-08-27
 
 ### Changed
@@ -38,8 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [mml-lib]: https://crates.io/crates/mml-lib
 
 [patch#44036]: https://lists.sr.ht/~soywod/pimalaya/patches/44036
+[patch#44147]: https://lists.sr.ht/~soywod/pimalaya/patches/44147
 
-[Unreleased]: https://github.com/soywod/mml/compare/v0.2.0...master
+[Unreleased]: https://github.com/soywod/mml/compare/v0.2.1...master
+[0.2.1]: https://github.com/soywod/mml/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/soywod/mml/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/soywod/mml/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/soywod/mml/releases/tag/v0.1.0

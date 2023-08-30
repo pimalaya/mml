@@ -1,7 +1,7 @@
 [package]
 name = "mml-cli"
 description = "CLI to deal with Emacs MIME message Meta Language (MML)."
-version = "0.2.0"
+version = "0.2.1"
 authors = ["soywod <clement.douin@posteo.net>"]
 edition = "2021"
 license = "MIT"
@@ -29,10 +29,12 @@ pgp-native = ["mml-lib/pgp-native"]
 version = "3.3"
 
 # error
+
 [dependencies.anyhow]
 version = "1.0"
 
 # log
+
 [dependencies.log]
 version = "0.4"
 
@@ -40,12 +42,14 @@ version = "0.4"
 version = "0.10"
 
 # async
+
 [dependencies.tokio]
 version = "1.32"
 default-features = false
-features = ["fs", "io-util", "io-std", "macros", "rt-multi-thread"]
+features = ["macros", "rt-multi-thread"]
 
 # io
+
 [dependencies.atty]
 version = "0.2"
 
@@ -53,6 +57,7 @@ version = "0.2"
 version = "0.1.0"
 
 # cli
+
 [dependencies.clap]
 version = "4.3"
 features = ["derive"]
@@ -64,6 +69,7 @@ version = "4.3"
 version = "0.2"
 
 # mml
+
 [dependencies.mml-lib]
 version = "=0.2.3"
 default-features = false
