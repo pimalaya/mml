@@ -56,7 +56,7 @@ Special thanks to the [NLnet foundation](https://nlnet.nl/project/Himalaya/index
 - [NGI Assure](https://nlnet.nl/assure/) in 2022
 - [NGI Zero Untrust](https://nlnet.nl/entrust/) in 2023
 
-If you appreciate the project, feel free to financially support it:
+If you appreciate the project, feel free to donate using one of the following providers:
 
 [![GitHub](https://img.shields.io/badge/-GitHub%20Sponsors-fafbfc?logo=GitHub%20Sponsors)](https://github.com/sponsors/soywod)
 [![PayPal](https://img.shields.io/badge/-PayPal-0079c1?logo=PayPal&logoColor=ffffff)](https://www.paypal.com/paypalme/soywod)
