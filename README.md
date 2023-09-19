@@ -1,10 +1,10 @@
 # 📫 MIME Meta Language [![Crates.io](https://img.shields.io/crates/v/mml-cli)](https://crates.io/crates/mml-cli) [![Matrix](https://img.shields.io/matrix/pimalaya.mml:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya.mml:matrix.org)
 
-https://pimalaya.org/mml/
+CLI to compile [MML] messages to [MIME] messages and interpret [MIME] messages as [MML] messages, based on [mml-lib].
 
-CLI to deal with Emacs MIME message Meta Language (MML), based on [mml-lib](https://sr.ht/~soywod/pimalaya/).
-
-*Disclaimer: the project is under active development, do not use in production before the `v1.0.0`.*
+[MML]: https://www.gnu.org/software/emacs/manual/html_node/emacs-mime/MML-Definition.html
+[MIME]: https://www.rfc-editor.org/rfc/rfc2045
+[mml-lib]: https://sr.ht/~soywod/pimalaya/
 
 ## Features
 

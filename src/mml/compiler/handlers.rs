@@ -1,22 +1,25 @@
 use anyhow::{Context, Result};
 use ariadne::{Color, Label, Report, ReportKind, Source};
-use mml::MmlCompiler;
+use mml::{message::body::compiler::Error as CompileMmlBodyError, Error, MmlCompiler};
 
 pub async fn compile(mml: String) -> Result<()> {
-    match MmlCompiler::new().compile(&mml).await {
-        Err(mml::Error::CompileMmlBodyError(
-            mml::message::body::compiler::Error::ParseMmlError(errs, mml),
-        )) => {
-            errs.into_iter().for_each(|e| {
-                Report::build(ReportKind::Error, (), e.span().start)
+    let compiler = MmlCompiler::new();
+
+    // TODO: add PGP args?
+    // compiler = compiler.with_pgp(…)
+
+    match compiler.compile(&mml).await {
+        Err(Error::CompileMmlBodyError(CompileMmlBodyError::ParseMmlError(errs, body))) => {
+            errs.into_iter().for_each(|err| {
+                Report::build(ReportKind::Error, (), err.span().start)
                     .with_message("cannot parse MML message")
                     .with_label(
-                        Label::new(e.span().into_range())
-                            .with_message(e.reason().to_string())
+                        Label::new(err.span().into_range())
+                            .with_message(err.reason().to_string())
                             .with_color(Color::Red),
                     )
                     .finish()
-                    .print(Source::from(&mml))
+                    .print(Source::from(&body))
                     .unwrap()
             });
             Ok(())

@@ -36,6 +36,8 @@ async fn main() -> Result<()> {
         #[cfg(feature = "compiler")]
         Commands::Compile(cmd) => mml::compiler::handlers::compile(cmd.mml()).await,
         #[cfg(feature = "interpreter")]
-        Commands::Interpret(cmd) => mml::interpreter::handlers::interpret(cmd.mime()).await,
+        Commands::Interpret(cmd) => {
+            mml::interpreter::handlers::interpret(cmd.show_headers(), cmd.mime()).await
+        }
     }
 }
