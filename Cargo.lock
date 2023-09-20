@@ -1476,9 +1476,9 @@ dependencies = [
 
 [[package]]
 name = "mml-lib"
-version = "0.3.2"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09cdc22917bc3c02ed374099800e8855bf8da44a347ae01e41448590a72db789"
+checksum = "25f51f9ce71bb21b3f712257ac44e8870d095a73df407ecdccb7a4627e06a572"
 dependencies = [
  "async-recursion",
  "chumsky",

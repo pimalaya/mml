@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use log::warn;
-use mml::message::ShowHeadersStrategy;
+use mml::message::{FilterHeaders, FilterParts};
 use shellexpand_utils::try_shellexpand_path;
 use std::{fs, path::PathBuf};
 
@@ -16,18 +16,56 @@ pub struct InterpretCommand {
     #[arg(value_parser = parse_mime)]
     mime: Option<MimeMessage>,
 
-    /// Transfer given header from the MIME message to the interpreted
-    /// MML message.
-    #[arg(long, value_name = "HEADER")]
-    show_header: Option<Vec<String>>,
+    /// Include header to the interpreted message.
+    #[arg(long, value_name = "HEADER", value_delimiter = ',')]
+    include_header: Option<Vec<String>>,
 
-    /// Skip headers and interpret only the body of the MIME message.
+    /// Exclude header from the interpreted message.
+    #[arg(long, value_name = "HEADER", value_delimiter = ',')]
+    exclude_header: Option<Vec<String>>,
+
+    /// Include parts to intepret by their MIME type.
+    #[arg(long, value_name = "MIME", value_delimiter = ',')]
+    include_part: Option<Vec<String>>,
+
+    /// Exclude parts to interpret by their MIME type.
+    #[arg(long, value_name = "MIME", value_delimiter = ',')]
+    exclude_part: Option<Vec<String>>,
+
+    /// Enable interpretation of multiparts.
     #[arg(long)]
-    hide_headers: bool,
+    show_multiparts: bool,
+
+    /// Save automatically attachments found in the original MIME
+    /// message to the `save_attachments_dir` directory.
+    #[arg(long)]
+    save_attachments: bool,
+
+    /// Define the directory attachments should point to.
+    ///
+    /// If `save_attachments` is true, attachments are automatically
+    /// downloaded to this directory.
+    #[arg(long, value_name = "DIR")]
+    save_attachments_dir: Option<PathBuf>,
+
+    /// If true, disable interpretation of all attachments.
+    #[arg(long)]
+    hide_attachments: bool,
+
+    /// If true, disable interpretation of attachments with a content
+    /// disposition set to inline.
+    #[arg(long)]
+    hide_inline_attachments: bool,
+
+    /// If true, trim out signatures from text bodies.
+    ///
+    /// Only standard signatures can be trimmed out. Plain text found
+    /// after a `-- \n` is considered a standard signature.
+    #[arg(long)]
+    hide_plain_texts_signature: bool,
 }
 
 impl InterpretCommand {
-    /// Return the command-line provided message or read one from stdin.
     pub fn mime(self) -> MimeMessage {
         match self.mime {
             Some(mime) => mime,
@@ -35,15 +73,53 @@ impl InterpretCommand {
         }
     }
 
-    pub fn show_headers(&self) -> ShowHeadersStrategy {
-        if self.hide_headers {
-            ShowHeadersStrategy::Only(Vec::new())
+    pub fn filter_headers(&self) -> FilterHeaders {
+        if let Some(mime_types) = &self.exclude_header {
+            FilterHeaders::Exclude(mime_types.clone())
         } else {
-            match &self.show_header {
-                Some(headers) => ShowHeadersStrategy::Only(headers.clone()),
-                None => ShowHeadersStrategy::All,
+            match &self.include_header {
+                Some(mime_types) => FilterHeaders::Include(mime_types.clone()),
+                None => FilterHeaders::All,
             }
         }
+    }
+
+    pub fn filter_parts(&self) -> FilterParts {
+        if let Some(mime_types) = &self.exclude_part {
+            FilterParts::Exclude(mime_types.clone())
+        } else {
+            match &self.include_part {
+                Some(mime_types) if mime_types.len() == 1 => {
+                    FilterParts::Only(mime_types[0].clone())
+                }
+                Some(mime_types) => FilterParts::Include(mime_types.clone()),
+                None => FilterParts::All,
+            }
+        }
+    }
+
+    pub fn show_multiparts(&self) -> bool {
+        self.show_multiparts
+    }
+
+    pub fn save_attachments(&self) -> bool {
+        self.save_attachments
+    }
+
+    pub fn save_attachments_dir(&self) -> Option<PathBuf> {
+        self.save_attachments_dir.clone()
+    }
+
+    pub fn show_attachments(&self) -> bool {
+        !self.hide_attachments
+    }
+
+    pub fn show_inline_attachments(&self) -> bool {
+        !self.hide_inline_attachments
+    }
+
+    pub fn show_plain_texts_signature(&self) -> bool {
+        !self.hide_plain_texts_signature
     }
 }
 

@@ -37,7 +37,18 @@ async fn main() -> Result<()> {
         Commands::Compile(cmd) => mml::compiler::handlers::compile(cmd.mml()).await,
         #[cfg(feature = "interpreter")]
         Commands::Interpret(cmd) => {
-            mml::interpreter::handlers::interpret(cmd.show_headers(), cmd.mime()).await
+            mml::interpreter::handlers::interpret(
+                cmd.filter_headers(),
+                cmd.filter_parts(),
+                cmd.show_multiparts(),
+                cmd.save_attachments(),
+                cmd.save_attachments_dir(),
+                cmd.show_attachments(),
+                cmd.show_inline_attachments(),
+                cmd.show_plain_texts_signature(),
+                cmd.mime(),
+            )
+            .await
         }
     }
 }
