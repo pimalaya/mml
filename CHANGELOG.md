@@ -10,10 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added better diagnostic with `ariadne`.
+- Added `mml interpret` options:
+  - `--include-header` to include specific header to the interpreted message (cumulative)
+  - `--exclude-header` to exclude specific header from the interpreted message (cumulative)
+  - `--include-part` to include specific MIME types to the interpreted message (cumulative)
+  - `--exclude-part` to exclude specific MIME types from the interpreted message (cumulative)
+  - `--show-multiparts` to enable interpretation of multiparts
+  - `--save-attachments` to automatically save attachments to directory defined by `--save-attachments-dir`
+  - `--save-attachments-dir` to define directory attachments should point to
+  - `--hide-attachments` to disable interpretation of all attachments
+  - `--hide-inline-attachments` to disable interpretation of inline attachments only
+  - `--hide-plain-texts-signature` to trim out signature from text plain parts
 
 ### Changed
 
-- Bumped `mml-lib@v0.3.2`.
+- Bumped `mml-lib@v0.4.0`.
 
 ## [0.2.1] - 2023-08-30
 

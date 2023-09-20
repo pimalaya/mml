@@ -17,19 +17,39 @@ pub struct InterpretCommand {
     mime: Option<MimeMessage>,
 
     /// Include header to the interpreted message.
-    #[arg(long, value_name = "HEADER", value_delimiter = ',')]
+    #[arg(
+        long,
+        value_name = "HEADER",
+        value_delimiter = ',',
+        conflicts_with = "exclude_header"
+    )]
     include_header: Option<Vec<String>>,
 
     /// Exclude header from the interpreted message.
-    #[arg(long, value_name = "HEADER", value_delimiter = ',')]
+    #[arg(
+        long,
+        value_name = "HEADER",
+        value_delimiter = ',',
+        conflicts_with = "include_header"
+    )]
     exclude_header: Option<Vec<String>>,
 
     /// Include parts to intepret by their MIME type.
-    #[arg(long, value_name = "MIME", value_delimiter = ',')]
+    #[arg(
+        long,
+        value_name = "MIME",
+        value_delimiter = ',',
+        conflicts_with = "exclude_part"
+    )]
     include_part: Option<Vec<String>>,
 
     /// Exclude parts to interpret by their MIME type.
-    #[arg(long, value_name = "MIME", value_delimiter = ',')]
+    #[arg(
+        long,
+        value_name = "MIME",
+        value_delimiter = ',',
+        conflicts_with = "include_part"
+    )]
     exclude_part: Option<Vec<String>>,
 
     /// Enable interpretation of multiparts.
