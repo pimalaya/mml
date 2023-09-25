@@ -1,14 +1,15 @@
 use anyhow::{Context, Result};
 use ariadne::{Color, Label, Report, ReportKind, Source};
-use mml::{message::body::compiler::Error as CompileMmlBodyError, Error, MmlCompiler};
+use mml::{message::body::compiler::Error as CompileMmlBodyError, Error, MmlCompilerBuilder};
 
 pub async fn compile(mml: String) -> Result<()> {
-    let compiler = MmlCompiler::new();
+    let compiler = MmlCompilerBuilder::new()
+        // TODO:
+        // .with_pgp(…)
+        .build(&mml)
+        .context("cannot build MML compiler")?;
 
-    // TODO: add PGP args?
-    // compiler = compiler.with_pgp(…)
-
-    match compiler.compile(&mml).await {
+    match compiler.compile().await {
         Err(Error::CompileMmlBodyError(CompileMmlBodyError::ParseMmlError(errs, body))) => {
             errs.into_iter().for_each(|err| {
                 Report::build(ReportKind::Error, (), err.span().start)
@@ -25,8 +26,8 @@ pub async fn compile(mml: String) -> Result<()> {
             Ok(())
         }
         Err(err) => Err(err).context("cannot compile MML message"),
-        Ok(mime) => {
-            let mime = mime.write_to_string()?;
+        Ok(res) => {
+            let mime = res.into_string()?;
             print!("{mime}");
             Ok(())
         }

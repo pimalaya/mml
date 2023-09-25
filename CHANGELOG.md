@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Bumped `mml-lib@v0.5.0`.
+
+## [0.3.0] - 2023-09-20
+
 ### Added
 
 - Added better diagnostic with `ariadne`.
