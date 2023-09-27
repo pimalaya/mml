@@ -1,7 +1,7 @@
 [package]
 name = "mml-cli"
 description = "CLI to compile MML messages to MIME messages and interpret MIME messages as MML messages."
-version = "0.3.0"
+version = "1.0.0"
 authors = ["soywod <clement.douin@posteo.net>"]
 edition = "2021"
 license = "MIT"
