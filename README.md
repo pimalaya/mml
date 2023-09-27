@@ -8,7 +8,8 @@ CLI to compile [MML] messages to [MIME] messages and interpret [MIME] messages a
 
 ## Features
 
-TODO
+- MML to MIME messages compilation (`mml compile --help`)
+- MIME to MML messages interpretation (`mml interpret --help`)
 
 ## Installation
 
