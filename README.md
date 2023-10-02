@@ -36,9 +36,9 @@ $ nix-env -i mml
 </tr>
 </table>
 
-## Configuration
+## Usage
 
-Please read the [documentation](https://pimalaya.org/mml/cli/configuration/index.html).
+Please read the [documentation](https://pimalaya.org/mml/cli/usage/index.html).
 
 ## Contributing
 
