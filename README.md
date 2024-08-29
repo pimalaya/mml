@@ -1,10 +1,9 @@
-# 📫 MIME Meta Language [![Crates.io](https://img.shields.io/crates/v/mml-cli)](https://crates.io/crates/mml-cli) [![Matrix](https://img.shields.io/matrix/pimalaya.mml:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya.mml:matrix.org)
+# 📫 MIME Meta Language [![GitHub release](https://img.shields.io/github/v/release/pimalaya/mml?color=success)](https://github.com/pimalaya/mml/releases/latest) [![Matrix](https://img.shields.io/matrix/pimalaya:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya:matrix.org)
 
-CLI to compile [MML] messages to [MIME] messages and interpret [MIME] messages as [MML] messages, based on [mml-lib].
+CLI to compile [MML] messages to [MIME] messages and interpret [MIME] messages as [MML] messages, based on [`mml-lib`](https://github.com/pimalaya/core/tree/master/mml).
 
 [MML]: https://www.gnu.org/software/emacs/manual/html_node/emacs-mime/MML-Definition.html
 [MIME]: https://www.rfc-editor.org/rfc/rfc2045
-[mml-lib]: https://sr.ht/~soywod/pimalaya/
 
 ## Features
 
@@ -36,26 +35,14 @@ $ nix-env -i mml
 </tr>
 </table>
 
-## Usage
-
-Please read the [documentation](https://pimalaya.org/mml/cli/usage/index.html).
-
-## Contributing
-
-If you want to **report a bug** that [does not exist yet](https://todo.sr.ht/~soywod/pimalaya), please send an email at [~soywod/pimalaya@todo.sr.ht](mailto:~soywod/pimalaya@todo.sr.ht).
-
-If you want to **propose a feature** or **fix a bug**, please send a patch at [~soywod/pimalaya@lists.sr.ht](mailto:~soywod/pimalaya@lists.sr.ht) using [git send-email](https://git-scm.com/docs/git-send-email). Follow [this guide](https://git-send-email.io/) to configure git properly.
-
-If you just want to **discuss** about the project, feel free to join the [Matrix](https://matrix.org/) workspace [#pimalaya.mml](https://matrix.to/#/#pimalaya.mml:matrix.org) or contact me directly [@soywod](https://matrix.to/#/@soywod:matrix.org). You can also use the mailing list [[send an email](mailto:~soywod/pimalaya@lists.sr.ht)|[subscribe](mailto:~soywod/pimalaya+subscribe@lists.sr.ht)|[unsubscribe](mailto:~soywod/pimalaya+unsubscribe@lists.sr.ht)].
-
 ## Sponsoring
 
-[![nlnet](https://nlnet.nl/logo/banner-160x60.png)](https://nlnet.nl/project/Himalaya/index.html)
+[![nlnet](https://nlnet.nl/logo/banner-160x60.png)](https://nlnet.nl/project/Pimalaya/index.html)
 
-Special thanks to the [NLnet foundation](https://nlnet.nl/project/Himalaya/index.html) and the [European Commission](https://www.ngi.eu/) that helped the project to receive financial support from:
+Special thanks to the [NLnet foundation](https://nlnet.nl/project/Pimalaya/index.html) and the [European Commission](https://www.ngi.eu/) that helped the project to receive financial support from:
 
 - [NGI Assure](https://nlnet.nl/assure/) in 2022
-- [NGI Zero Untrust](https://nlnet.nl/entrust/) in 2023
+- [NGI Zero Entrust](https://nlnet.nl/entrust/) in 2023
 
 If you appreciate the project, feel free to donate using one of the following providers:
 
