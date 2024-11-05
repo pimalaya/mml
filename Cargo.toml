@@ -1,6 +1,6 @@
 [package]
 name = "mml-cli"
-description = "CLI to compile MML messages to MIME messages and interpret MIME messages as MML messages."
+description = "CLI to compile MML messages to MIME messages and interpret MIME messages as MML messages"
 version = "1.0.0"
 authors = ["soywod <clement.douin@posteo.net>"]
 edition = "2021"
@@ -23,57 +23,28 @@ path = "src/main.rs"
 default = [
   "compiler",
   "interpreter",
-  # "pgp-commands",
-  # "pgp-gpg",
-  # "pgp-native",
+  #"pgp-commands",
+  #"pgp-gpg",
+  #"pgp-native",
 ]
-compiler = ["mml-lib/compiler", "ariadne"]
+compiler = ["dep:ariadne", "mml-lib/compiler"]
 interpreter = ["mml-lib/interpreter"]
 pgp-commands = ["mml-lib/pgp-commands"]
 pgp-gpg = ["mml-lib/pgp-gpg"]
 pgp-native = ["mml-lib/pgp-native"]
 
-# dev dependencies
+[dependencies]
+color-eyre = "0.6"
+ariadne = { version = "0.3", optional = true }
+atty = "0.2"
+clap = { version = "4.3", features = ["derive"] }
+clap_complete = "4.3"
+clap_mangen = "0.2"
+tracing = "0.1"
+pimalaya-tui = { version = "=0.1", default-features = false, features = ["path", "cli", "tracing"] }
+mml-lib = { version = "1", default-features = false }
+tokio = { version = "1.32", default-features = false, features = ["macros", "rt-multi-thread"] }
 
-[dev-dependencies.tempfile]
-version = "3.3"
-
-# dependencies
-
-[dependencies.anyhow]
-version = "1.0"
-
-[dependencies.ariadne]
-version = "0.3"
-optional = true
-
-[dependencies.atty]
-version = "0.2"
-
-[dependencies.clap]
-version = "4.3"
-features = ["derive"]
-
-[dependencies.clap_complete]
-version = "4.3"
-
-[dependencies.clap_mangen]
-version = "0.2"
-
-[dependencies.env_logger]
-version = "0.10"
-
-[dependencies.log]
-version = "0.4"
-
-[dependencies.mml-lib]
-version = "1.0.0"
-default-features = false
-
-[dependencies.shellexpand-utils]
-version = "0.1.0"
-
-[dependencies.tokio]
-version = "1.32"
-default-features = false
-features = ["macros", "rt-multi-thread"]
+[patch.crates-io]
+mml-lib = { git = "https://github.com/pimalaya/core" }
+pimalaya-tui = { git = "https://github.com/pimalaya/tui" }

@@ -4,9 +4,9 @@ mod compl;
 mod man;
 mod mml;
 
-use anyhow::Result;
 use clap::{CommandFactory, Parser, Subcommand};
-use env_logger::{Builder as LoggerBuilder, Env, DEFAULT_FILTER_ENV};
+use color_eyre::Result;
+use pimalaya_tui::terminal::cli::tracing;
 
 #[derive(Parser, Debug)]
 #[command(name= "mml", author, version, about, long_about = None, propagate_version = true)]
@@ -27,12 +27,9 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    LoggerBuilder::new()
-        .parse_env(Env::new().filter_or(DEFAULT_FILTER_ENV, "warn"))
-        .format_timestamp(None)
-        .init();
+    let tracing = tracing::install()?;
 
-    match Cli::parse().command {
+    let res = match Cli::parse().command {
         Commands::Completion(cmd) => compl::handlers::generate(Cli::command(), cmd.shell),
         Commands::Man(cmd) => man::handlers::generate(cmd.dir, Cli::command()),
         #[cfg(feature = "compiler")]
@@ -52,5 +49,7 @@ async fn main() -> Result<()> {
             )
             .await
         }
-    }
+    };
+
+    tracing.with_debug_and_trace_notes(res)
 }

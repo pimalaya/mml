@@ -1,45 +1,138 @@
 # 📫 MML CLI [![GitHub release](https://img.shields.io/github/v/release/pimalaya/mml?color=success)](https://github.com/pimalaya/mml/releases/latest) [![Matrix](https://img.shields.io/matrix/pimalaya:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya:matrix.org)
 
-**CLI** to convert [MML](https://www.gnu.org/software/emacs/manual/html_node/emacs-mime/MML-Definition.html) email messages to [MIME](https://www.rfc-editor.org/rfc/rfc2045) ones, based on [`mml-lib`](https://crates.io/crates/mml-lib)
+CLI to convert [MIME](https://www.rfc-editor.org/rfc/rfc2045) messages into/from Emacs [MIME Meta Language](https://www.gnu.org/software/emacs/manual/html_node/emacs-mime/MML-Definition.html), based on [`mml-lib`](https://crates.io/crates/mml-lib)
 
 ## Features
 
 - MML to MIME messages compilation (`mml compile --help`)
 - MIME to MML messages interpretation (`mml interpret --help`)
 
+*MML CLI is written in [Rust](https://www.rust-lang.org/), and relies on [cargo features](https://doc.rust-lang.org/cargo/reference/features.html) to enable or disable functionalities. Default features can be found in the `features` section of the [`Cargo.toml`](https://github.com/pimalaya/mml/blob/master/Cargo.toml#L18).*
+
 ## Installation
 
-<table align="center">
-<tr>
-<td width="50%">
-<a href="https://repology.org/project/mml/versions">
-<img src="https://repology.org/badge/vertical-allrepos/mml.svg" alt="Packaging status" />
-</a>
-</td>
-<td width="50%">
+MML CLI can be installed with a pre-built binary:
 
 ```bash
-# Cargo
-$ cargo install mml-cli
+# As root:
+$ curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | sudo sh
 
-# Nix
-$ nix-env -i mml
+# As a regular user:
+$ curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | PREFIX=~/.local sh
 ```
 
-*See the [documentation](https://pimalaya.org/mml/cli/installation/index.html) for other installation methods.*
+These commands install the latest binary from the GitHub [releases](https://github.com/pimalaya/mml/releases) section.
 
-</td>
-</tr>
-</table>
+*Binaries are built with [default](https://github.com/pimalaya/mml/blob/master/Cargo.toml#L18) cargo features. If you want to enable or disable a feature, please use another installation method.*
+
+<details>
+  <summary>Cargo</summary>
+
+  MML CLI can be installed with [cargo](https://doc.rust-lang.org/cargo/):
+
+  ```bash
+  $ cargo install mml
+
+  # With only IMAP support:
+  $ cargo install mml --no-default-features --features imap
+  ```
+
+  You can also use the git repository for a more up-to-date (but less stable) version:
+
+  ```bash
+  $ cargo install --git https://github.com/pimalaya/mml.git mml
+  ```
+</details>
+
+<details>
+  <summary>Nix</summary>
+
+  MML CLI can be installed with [Nix](https://serokell.io/blog/what-is-nix):
+
+  ```bash
+  $ nix-env -i mml
+  ```
+
+  You can also use the git repository for a more up-to-date (but less stable) version:
+
+  ```bash
+  $ nix-env -if https://github.com/pimalaya/mml/archive/master.tar.gz
+
+  # or, from within the source tree checkout
+  $ nix-env -if .
+  ```
+
+  If you have the [Flakes](https://nixos.wiki/wiki/Flakes) feature enabled:
+
+  ```bash
+  $ nix profile install mml
+
+  # or, from within the source tree checkout
+  $ nix profile install
+
+  # you can also run MML directly without installing it:
+  $ nix run mml
+  ```
+</details>
+
+<details>
+  <summary>Sources</summary>
+
+  MML CLI can be installed from sources.
+
+  First you need to install the Rust development environment (see the [rust installation documentation](https://doc.rust-lang.org/cargo/getting-started/installation.html)):
+
+  ```bash
+  $ curl https://sh.rustup.rs -sSf | sh
+  ```
+
+  Then, you need to clone the repository and install dependencies:
+
+  ```bash
+  $ git clone https://github.com/pimalaya/mml.git
+  $ cd mml
+  $ cargo check
+  ```
+
+  Now, you can build MML:
+
+  ```bash
+  $ cargo build --release
+  ```
+
+  *Binaries are available under the `target/release` folder.*
+</details>
+
+## FAQ
+
+<details>
+  <summary>How to debug MML CLI?</summary>
+
+  The simplest way is to use `--debug` and `--trace` arguments.
+
+  The advanced way is based on environment variables:
+
+  - `RUST_LOG=<level>`: determines the log level filter, can be one of `off`, `error`, `warn`, `info`, `debug` and `trace`.
+  - `RUST_SPANTRACE=1`: enables the spantrace (a span represent periods of time in which a program was executing in a particular context).
+  - `RUST_BACKTRACE=1`: enables the error backtrace.
+  - `RUST_BACKTRACE=full`: enables the full error backtrace, which include source lines where the error originated from.
+
+  Logs are written to the `stderr`, which means that you can redirect them easily to a file:
+
+  ```
+  RUST_LOG=debug mml 2>/tmp/mml.log
+  ```
+</details>
 
 ## Sponsoring
 
-[![nlnet](https://nlnet.nl/logo/banner-160x60.png)](https://nlnet.nl/project/Pimalaya/index.html)
+[![nlnet](https://nlnet.nl/logo/banner-160x60.png)](https://nlnet.nl/)
 
-Special thanks to the [NLnet foundation](https://nlnet.nl/project/Pimalaya/index.html) and the [European Commission](https://www.ngi.eu/) that helped the project to receive financial support from:
+Special thanks to the [NLnet foundation](https://nlnet.nl/) and the [European Commission](https://www.ngi.eu/) that helped the project to receive financial support from various programs:
 
-- [NGI Assure](https://nlnet.nl/assure/) in 2022
-- [NGI Zero Entrust](https://nlnet.nl/entrust/) in 2023
+- [NGI Assure](https://nlnet.nl/project/Himalaya/) in 2022
+- [NGI Zero Entrust](https://nlnet.nl/project/Pimalaya/) in 2023
+- [NGI Zero Core](https://nlnet.nl/project/Pimalaya-PIM/) in 2024 *(still ongoing)*
 
 If you appreciate the project, feel free to donate using one of the following providers:
 

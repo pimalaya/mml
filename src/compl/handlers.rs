@@ -2,9 +2,9 @@
 //!
 //! This module gathers all completion commands.
 
-use anyhow::Result;
 use clap::Command;
 use clap_complete::Shell;
+use color_eyre::Result;
 use std::io::stdout;
 
 /// Generates completion script from the given command and shell.

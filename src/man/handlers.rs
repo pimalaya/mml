@@ -2,9 +2,9 @@
 //!
 //! This module gathers all man commands.  
 
-use anyhow::Result;
 use clap::Command;
 use clap_mangen::Man;
+use color_eyre::Result;
 use std::{fs, path::PathBuf};
 
 /// Generates all man pages of all subcommands in the given directory.
@@ -19,10 +19,7 @@ pub fn generate(dir: PathBuf, cmd: Command) -> Result<()> {
         let mut buffer = Vec::new();
         let subcmd_name = subcmd.get_name().to_string();
         Man::new(subcmd).render(&mut buffer)?;
-        fs::write(
-            &dir.join(format!("{}-{}.1", cmd_name, subcmd_name)),
-            buffer,
-        )?;
+        fs::write(&dir.join(format!("{}-{}.1", cmd_name, subcmd_name)), buffer)?;
     }
 
     Ok(())

@@ -1,6 +1,6 @@
-use anyhow::{Context, Result};
 use ariadne::{Color, Label, Report, ReportKind, Source};
-use mml::{message::body::compiler::Error as CompileMmlBodyError, Error, MmlCompilerBuilder};
+use color_eyre::{eyre::Context, Result};
+use mml::{Error, MmlCompilerBuilder};
 
 pub async fn compile(mml: String) -> Result<()> {
     let compiler = MmlCompilerBuilder::new()
@@ -10,7 +10,7 @@ pub async fn compile(mml: String) -> Result<()> {
         .context("cannot build MML compiler")?;
 
     match compiler.compile().await {
-        Err(Error::CompileMmlBodyError(CompileMmlBodyError::ParseMmlError(errs, body))) => {
+        Err(Error::ParseMmlError(errs, body)) => {
             errs.into_iter().for_each(|err| {
                 Report::build(ReportKind::Error, (), err.span().start)
                     .with_message("cannot parse MML message")

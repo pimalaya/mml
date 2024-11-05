@@ -1,9 +1,10 @@
-use anyhow::{Context, Result};
+use std::path::PathBuf;
+
+use color_eyre::{eyre::Context, Result};
 use mml::{
     message::{FilterHeaders, FilterParts},
     MimeInterpreterBuilder,
 };
-use std::path::PathBuf;
 
 pub async fn interpret(
     filter_headers: FilterHeaders,

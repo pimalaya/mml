@@ -1,8 +1,9 @@
-use anyhow::Result;
+use std::fs;
+
 use clap::Parser;
-use log::warn;
-use shellexpand_utils::try_shellexpand_path;
-use std::{fs, path::PathBuf};
+use color_eyre::Result;
+use pimalaya_tui::terminal::cli::arg::path_parser;
+use tracing::warn;
 
 use crate::mml::{format_stdin, format_str};
 
@@ -11,7 +12,7 @@ type MmlMessage = String;
 /// Compile the given MML message to a valid MIME message
 #[derive(Parser, Debug)]
 pub struct CompileCommand {
-    /// Read the mssage from the given file path.
+    /// Read the message from the given file path.
     #[arg(value_parser = parse_mml)]
     mml: Option<MmlMessage>,
 }
@@ -27,14 +28,11 @@ impl CompileCommand {
 }
 
 fn parse_mml(raw: &str) -> Result<MmlMessage, String> {
-    let mml = match try_shellexpand_path(raw) {
-        Ok(path) => fs::read_to_string(PathBuf::from(path)).map_err(|e| e.to_string())?,
+    match path_parser(raw) {
+        Ok(path) => fs::read_to_string(path).map_err(|err| err.to_string()),
         Err(err) => {
-            warn!("{err}");
-            warn!("invalid path, processing it as raw MML message");
-            format_str(raw)
+            warn!(?err, "invalid path, processing arg as raw MML message");
+            Ok(format_str(&raw))
         }
-    };
-
-    Ok(mml)
+    }
 }

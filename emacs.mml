@@ -1,0 +1,15 @@
+From: Alice <alice@localhost>
+To: Bob <bob@localhost>
+Subject: Example from Emacs MML documentation
+
+<#multipart type=mixed>
+<#part type=image/jpeg filename=./rms.jpg disposition=inline>
+<#multipart type=alternative>
+This is a plain text part.
+<#part type=text/enriched name=enriched.txt>
+<center>This is a centered enriched part</center>
+<#/multipart>
+This is a new plain text part.
+<#part disposition=attachment>
+This plain text part is an attachment.
+<#/multipart>
