@@ -11,7 +11,9 @@ CLI to convert [MIME](https://www.rfc-editor.org/rfc/rfc2045) messages into/from
 
 ## Installation
 
-MML CLI can be installed with a pre-built binary:
+### From release
+
+MML CLI can be installed with a pre-built binary from the latest [GitHub release](https://github.com/pimalaya/mml/releases):
 
 ```bash
 # As root:
@@ -21,9 +23,15 @@ $ curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | s
 $ curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | PREFIX=~/.local sh
 ```
 
-These commands install the latest binary from the GitHub [releases](https://github.com/pimalaya/mml/releases) section.
+### From CI
 
-*Binaries are built with [default](https://github.com/pimalaya/mml/blob/master/Cargo.toml#L18) cargo features. If you want to enable or disable a feature, please use another installation method.*
+MML CLI can be installed with a pre-built binary from the [pre-release GitHub workflow](https://github.com/pimalaya/neverest/actions/workflows/pre-release.yml): take the latest build, find the *Artifacts* section, you should find a pre-built binary matching your OS.
+
+This workflow is triggered everytime a new commit is pushed on `master`. Such binary is usually more up-to-date than a release, but also less stable.
+
+*Pre-built binaries are built with [default](https://github.com/pimalaya/mml/blob/master/Cargo.toml#L18) cargo features. If you want to enable or disable a feature, please use another installation method.*
+
+### Other
 
 <details>
   <summary>Cargo</summary>

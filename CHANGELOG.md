@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Bumped all major dependencies.
+
 ## [1.0.0] - 2023-09-27
 
 ### Changed
@@ -39,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Improved shell expansion.
-- Use `clap` derive feature for parsing arguments. [patch#44147]
+- Use `clap` derive feature for parsing arguments.
 
 ## [0.2.0] - 2023-08-27
 
@@ -50,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed wrong main command name [patch#44036].
+- Fixed wrong main command name.
 
 ## [0.1.1] - 2023-08-27
 
@@ -67,14 +71,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added `compile` and `interpret` feature from [mml-lib].
+- Added `compile` and `interpret` feature from [mml-lib](https://crates.io/crates/mml-lib).
 
-[mml-lib]: https://crates.io/crates/mml-lib
-
-[patch#44036]: https://lists.sr.ht/~soywod/pimalaya/patches/44036
-[patch#44147]: https://lists.sr.ht/~soywod/pimalaya/patches/44147
-
-[Unreleased]: https://github.com/soywod/mml/compare/v0.2.1...master
+[Unreleased]: https://github.com/soywod/mml/compare/v1.0.0...master
+[1.0.0]: https://github.com/soywod/mml/compare/v0.3.0...v1.0.0
+[0.3.0]: https://github.com/soywod/mml/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/soywod/mml/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/soywod/mml/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/soywod/mml/compare/v0.1.0...v0.1.1
