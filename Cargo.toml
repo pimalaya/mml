@@ -25,7 +25,7 @@ compiler = ["dep:ariadne", "mml-lib/compiler"]
 interpreter = ["mml-lib/interpreter"]
 pgp-commands = ["mml-lib/pgp-commands"]
 pgp-gpg = ["mml-lib/pgp-gpg"]
-pgp-native = ["mml-lib/pgp-native", "mml-lib/tokio", "mml-lib/rustls"]
+pgp-native = ["mml-lib/pgp-native"]
 
 [build-dependencies]
 pimalaya-tui = { version = "=0.1", default-features = false, features = ["build-envs"] }
@@ -42,7 +42,7 @@ clap_complete = "4.3"
 clap_mangen = "0.2"
 tracing = "0.1"
 pimalaya-tui = { version = "=0.1", default-features = false, features = ["path", "cli", "tracing"] }
-mml-lib = { version = "1", default-features = false }
+mml-lib = { version = "1", default-features = false, features = ["tokio", "rustls"] }
 tokio = { version = "1.32", default-features = false, features = ["macros", "rt-multi-thread"] }
 
 [patch.crates-io]
