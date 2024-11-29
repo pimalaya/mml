@@ -6,10 +6,12 @@ mod mml;
 
 use clap::{CommandFactory, Parser, Subcommand};
 use color_eyre::Result;
-use pimalaya_tui::terminal::cli::tracing;
+use pimalaya_tui::{terminal::cli::tracing, long_version};
 
 #[derive(Parser, Debug)]
-#[command(name= "mml", author, version, about, long_about = None, propagate_version = true)]
+#[command(name = "mml", author, version, about)]
+#[command(long_version = long_version!())]
+#[command(propagate_version = true, infer_subcommands = true)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

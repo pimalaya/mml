@@ -25,7 +25,7 @@ $ curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | P
 
 ### From CI
 
-MML CLI can be installed with a pre-built binary from the [pre-release GitHub workflow](https://github.com/pimalaya/neverest/actions/workflows/pre-release.yml): take the latest build, find the *Artifacts* section, you should find a pre-built binary matching your OS.
+MML CLI can be installed with a pre-built binary from the [pre-release GitHub workflow](https://github.com/pimalaya/mml/actions/workflows/pre-releases.yml): take the latest build, find the *Artifacts* section, you should find a pre-built binary matching your OS.
 
 This workflow is triggered everytime a new commit is pushed on `master`. Such binary is usually more up-to-date than a release, but also less stable.
 

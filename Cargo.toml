@@ -1,18 +1,18 @@
 [package]
 name = "mml-cli"
-description = "CLI to compile MML messages to MIME messages and interpret MIME messages as MML messages"
+description = "CLI to convert MIME messages into/from Emacs MIME Meta Language"
 version = "1.0.0"
 authors = ["soywod <clement.douin@posteo.net>"]
 edition = "2021"
 license = "MIT"
 categories = ["command-line-utilities", "email", "text-processing"]
 keywords = ["email", "mime", "message", "mml", "emacs"]
-homepage = "https://pimalaya.org/mml/"
-documentation = "https://pimalaya.org/mml/"
-repository = "https://github.com/soywod/mml/"
+homepage = "https://pimalaya.org/"
+documentation = "https://github.com/pimalaya/mml/"
+repository = "https://github.com/pimalaya/mml/"
 
 [package.metadata.docs.rs]
-all-features = true
+features = ["pgp-native"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [[bin]]
@@ -20,18 +20,18 @@ name = "mml"
 path = "src/main.rs"
 
 [features]
-default = [
-  "compiler",
-  "interpreter",
-  #"pgp-commands",
-  #"pgp-gpg",
-  #"pgp-native",
-]
+default = ["compiler", "interpreter", "pgp-commands"]
 compiler = ["dep:ariadne", "mml-lib/compiler"]
 interpreter = ["mml-lib/interpreter"]
 pgp-commands = ["mml-lib/pgp-commands"]
 pgp-gpg = ["mml-lib/pgp-gpg"]
-pgp-native = ["mml-lib/pgp-native"]
+pgp-native = ["mml-lib/pgp-native", "mml-lib/tokio", "mml-lib/rustls"]
+
+[build-dependencies]
+pimalaya-tui = { version = "=0.1", default-features = false, features = ["build-envs"] }
+
+[dev-dependencies]
+mml-cli = { path = ".", features = ["pgp-gpg", "pgp-native"] }
 
 [dependencies]
 color-eyre = "0.6"
@@ -46,5 +46,9 @@ mml-lib = { version = "1", default-features = false }
 tokio = { version = "1.32", default-features = false, features = ["macros", "rt-multi-thread"] }
 
 [patch.crates-io]
+http-lib = { git = "https://github.com/pimalaya/core" }
 mml-lib = { git = "https://github.com/pimalaya/core" }
+pgp-lib = { git = "https://github.com/pimalaya/core" }
 pimalaya-tui = { git = "https://github.com/pimalaya/tui" }
+process-lib = { git = "https://github.com/pimalaya/core" }
+secret-lib = { git = "https://github.com/pimalaya/core" }
