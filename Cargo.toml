@@ -28,7 +28,7 @@ pgp-gpg = ["mml-lib/pgp-gpg"]
 pgp-native = ["mml-lib/pgp-native"]
 
 [build-dependencies]
-pimalaya-tui = { version = "=0.1", default-features = false, features = ["build-envs"] }
+pimalaya-tui = { version = "0.2", default-features = false, features = ["build-envs"] }
 
 [dev-dependencies]
 mml-cli = { path = ".", features = ["pgp-gpg", "pgp-native"] }
@@ -41,14 +41,9 @@ clap = { version = "4.3", features = ["derive"] }
 clap_complete = "4.3"
 clap_mangen = "0.2"
 tracing = "0.1"
-pimalaya-tui = { version = "=0.1", default-features = false, features = ["path", "cli", "tracing"] }
+pimalaya-tui = { version = "0.2", default-features = false, features = ["path", "cli", "tracing"] }
 mml-lib = { version = "1", default-features = false, features = ["tokio", "rustls"] }
 tokio = { version = "1.32", default-features = false, features = ["macros", "rt-multi-thread"] }
 
 [patch.crates-io]
-http-lib = { git = "https://github.com/pimalaya/core" }
 mml-lib = { git = "https://github.com/pimalaya/core" }
-pgp-lib = { git = "https://github.com/pimalaya/core" }
-pimalaya-tui = { git = "https://github.com/pimalaya/tui" }
-process-lib = { git = "https://github.com/pimalaya/core" }
-secret-lib = { git = "https://github.com/pimalaya/core" }
