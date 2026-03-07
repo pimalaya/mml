@@ -1,49 +1,51 @@
 [package]
-name = "mml-cli"
-description = "CLI to convert MIME messages into/from Emacs MIME Meta Language"
+name = "mml"
+description = "Rust implementation of the Emacs MIME message Meta Language (MML)"
 version = "1.0.0"
-authors = ["soywod <clement.douin@posteo.net>"]
+authors = ["Clément DOUIN <pimalaya.org@posteo.net>"]
 edition = "2021"
 license = "MIT"
 categories = ["command-line-utilities", "email", "text-processing"]
 keywords = ["email", "mime", "message", "mml", "emacs"]
-homepage = "https://pimalaya.org/"
-documentation = "https://github.com/pimalaya/mml/"
-repository = "https://github.com/pimalaya/mml/"
+homepage = "https://pimalaya.org"
+documentation = "https://docs.rs/mml/latest/mml"
+repository = "https://github.com/pimalaya/mml"
 
 [package.metadata.docs.rs]
-features = ["pgp-native"]
+all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = ["compiler", "interpreter"]
+cli = ["dep:anyhow", "dep:ariadne", "dep:clap", "dep:pimalaya-toolbox", "dep:serde"]
+compiler = ["dep:chumsky", "dep:shellexpand", "dep:tree_magic_mini"]
+interpreter = ["dep:nanohtml2text"]
 
 [[bin]]
 name = "mml"
 path = "src/main.rs"
-
-[features]
-default = ["compiler", "interpreter", "pgp-commands"]
-compiler = ["dep:ariadne", "mml-lib/compiler"]
-interpreter = ["mml-lib/interpreter"]
-pgp-commands = ["mml-lib/pgp-commands"]
-pgp-gpg = ["mml-lib/pgp-gpg"]
-pgp-native = ["mml-lib/pgp-native"]
+required-features = ["cli"]
 
 [build-dependencies]
-pimalaya-tui = { version = "0.2", default-features = false, features = ["build-envs"] }
+pimalaya-toolbox = { version = "0.0.4", default-features = false, features = ["build"], optional = true }
 
 [dev-dependencies]
-mml-cli = { path = ".", features = ["pgp-gpg", "pgp-native"] }
+concat-with = "0.2"
+tempdir = "0.3"
 
 [dependencies]
-color-eyre = "0.6"
+anyhow = { version = "1", optional = true }
 ariadne = { version = "0.3", optional = true }
-atty = "0.2"
-clap = { version = "4.3", features = ["derive"] }
-clap_complete = "4.3"
-clap_mangen = "0.2"
-tracing = "0.1"
-pimalaya-tui = { version = "0.2", default-features = false, features = ["path", "cli", "tracing"] }
-mml-lib = { version = "1", default-features = false, features = ["tokio", "rustls"] }
-tokio = { version = "1.32", default-features = false, features = ["macros", "rt-multi-thread"] }
-
-[patch.crates-io]
-mml-lib = { git = "https://github.com/pimalaya/core" }
+chumsky = { version = "=1.0.0-alpha.8", optional = true, features = ["std"] }
+clap = { version = "4.4", features = ["derive", "wrap_help"], optional = true }
+log = "0.4"
+mail-builder = "0.3"
+mail-parser = "0.9"
+nanohtml2text = { version = "0.1", optional = true }
+once_cell = "1.21"
+pimalaya-toolbox = { version = "0.0.4", default-features = false, features = ["terminal"], optional = true }
+regex = "1.12"
+serde = { version = "1", features = ["derive"], optional = true }
+shellexpand = { version = "3.1", optional = true }
+thiserror = "2"
+tree_magic_mini = { version = "3", optional = true }

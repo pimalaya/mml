@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Imported `mml-lib` from legacy `pimalaya/core/mml` repository. The lib and the CLI share the same code.
+- Added subcommand `template` to manage new, reply and forward templates. The code has been imported from the legacy `pimalaya/core/email` repository.
+
 ### Changed
 
-- Bumped all major dependencies.
+- The CLI is now behind a `cli` cargo feature that is disabled by default.
 
 ## [1.0.0] - 2023-09-27
 

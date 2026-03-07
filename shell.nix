@@ -1,6 +1,16 @@
-{ pimalaya ? import (fetchTarball "https://github.com/pimalaya/nix/archive/master.tar.gz")
-, ...
-} @args:
+{
+  nixpkgs ? <nixpkgs>,
+  system ? builtins.currentSystem,
+  pkgs ? import nixpkgs { inherit system; },
+  pimalaya ? import (fetchTarball "https://github.com/pimalaya/nix/archive/master.tar.gz"),
+  fenix ? import (fetchTarball "https://github.com/nix-community/fenix/archive/monthly.tar.gz") { },
+}:
 
-pimalaya.mkShell ({ rustToolchainFile = ./rust-toolchain.toml; }
-  // removeAttrs args [ "pimalaya" ])
+pimalaya.mkShell {
+  inherit
+    nixpkgs
+    system
+    pkgs
+    fenix
+    ;
+}
