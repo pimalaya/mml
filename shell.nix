@@ -6,11 +6,21 @@
   fenix ? import (fetchTarball "https://github.com/nix-community/fenix/archive/monthly.tar.gz") { },
 }:
 
-pimalaya.mkShell {
-  inherit
-    nixpkgs
-    system
-    pkgs
-    fenix
-    ;
-}
+let
+  inherit (pkgs) cargo-deny;
+
+  shell = pimalaya.mkShell {
+    inherit
+      nixpkgs
+      system
+      pkgs
+      fenix
+      ;
+  };
+
+in
+shell.overrideAttrs (prev: {
+  buildInputs = (prev.buildInputs or [ ]) ++ [
+    cargo-deny
+  ];
+})

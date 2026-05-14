@@ -1,9 +1,9 @@
 {
-  description = "CLI to manage emails";
+  description = "CLI to compose and read MIME messages using the MIME Meta Language markup, written in Rust";
 
   inputs = {
     nixpkgs = {
-      url = "github:nixos/nixpkgs/staging-next";
+      url = "github:nixos/nixpkgs/nixos-25.11";
     };
     fenix = {
       url = "github:nix-community/fenix/monthly";

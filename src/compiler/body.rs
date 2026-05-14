@@ -188,7 +188,7 @@ mod tests {
     use std::fs;
 
     use concat_with::concat_line;
-    use tempdir::TempDir;
+    use tempfile::Builder;
 
     use super::MmlBodyCompiler;
 
@@ -250,11 +250,8 @@ mod tests {
 
     #[test]
     fn attachment() {
-        let attachment = TempDir::new("attachment")
-            .unwrap()
-            .into_path()
-            .join("attachment.txt");
-
+        let dir = Builder::new().prefix("attachment").tempdir().unwrap();
+        let attachment = dir.path().join("attachment.txt");
         fs::write(&attachment, "Hello, world!").unwrap();
         let attachment_path = attachment.display();
 
