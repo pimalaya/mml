@@ -1,9 +1,11 @@
-//! Module dedicated to email address utils.
+//! Email address helpers shared by the reply/forward template
+//! builders: noreply detection, dedup, [`mail_parser`] →
+//! [`mail_builder`] address conversion.
 
 use std::{borrow::Cow, collections::HashSet};
 
 use mail_builder::headers::address as builder;
-use mail_parser as parser;
+use mail_parser::{self as parser, HeaderValue};
 use once_cell::sync::Lazy;
 use regex::Regex;
 
@@ -13,11 +15,11 @@ use regex::Regex;
 /// `do-not.reply`.
 static NO_REPLY: Lazy<Regex> = Lazy::new(|| Regex::new("(?i:not?[_\\-\\.]?reply)").unwrap());
 
-pub(crate) fn is_empty(header: &parser::HeaderValue) -> bool {
+pub(crate) fn is_empty(header: &HeaderValue) -> bool {
     match header {
-        parser::HeaderValue::Address(parser::Address::List(addrs)) => addrs.is_empty(),
-        parser::HeaderValue::Address(parser::Address::Group(groups)) => groups.is_empty(),
-        parser::HeaderValue::Empty => true,
+        HeaderValue::Address(parser::Address::List(addrs)) => addrs.is_empty(),
+        HeaderValue::Address(parser::Address::Group(groups)) => groups.is_empty(),
+        HeaderValue::Empty => true,
         _ => false,
     }
 }
@@ -25,10 +27,10 @@ pub(crate) fn is_empty(header: &parser::HeaderValue) -> bool {
 pub(crate) fn push_builder_address<'a>(
     all_emails: &mut HashSet<Cow<'a, str>>,
     all_addrs: &mut Vec<builder::Address<'a>>,
-    header: &'a parser::HeaderValue,
+    header: &'a HeaderValue,
 ) {
     match header {
-        parser::HeaderValue::Address(parser::Address::List(addrs)) => {
+        HeaderValue::Address(parser::Address::List(addrs)) => {
             for addr in addrs {
                 if let Some(email) = addr.address.as_ref() {
                     if let Some(addr) = &addr.address {
@@ -46,7 +48,7 @@ pub(crate) fn push_builder_address<'a>(
                 }
             }
         }
-        parser::HeaderValue::Address(parser::Address::Group(groups)) => {
+        HeaderValue::Address(parser::Address::Group(groups)) => {
             for group in groups {
                 if let Some(group_name) = group.name.as_ref() {
                     if all_emails.insert(group_name.clone()) {

@@ -1,136 +1,247 @@
-# 📫 MML CLI [![GitHub release](https://img.shields.io/github/v/release/pimalaya/mml?color=success)](https://github.com/pimalaya/mml/releases/latest) [![Matrix](https://img.shields.io/matrix/pimalaya:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya:matrix.org)
+# MML [![Documentation](https://img.shields.io/docsrs/mml?style=flat&logo=docs.rs&logoColor=white)](https://docs.rs/mml/latest/mml) [![Matrix](https://img.shields.io/badge/chat-%23pimalaya-blue?style=flat&logo=matrix&logoColor=white)](https://matrix.to/#/#pimalaya:matrix.org) [![Mastodon](https://img.shields.io/badge/news-%40pimalaya-blue?style=flat&logo=mastodon&logoColor=white)](https://fosstodon.org/@pimalaya)
 
-CLI to convert [MIME](https://www.rfc-editor.org/rfc/rfc2045) messages into/from Emacs [MIME Meta Language](https://www.gnu.org/software/emacs/manual/html_node/emacs-mime/MML-Definition.html), based on [`mml-lib`](https://crates.io/crates/mml-lib)
+Client library and CLI to compose and read MIME messages using the [MIME Meta Language](https://www.gnu.org/software/emacs/manual/html_node/emacs-mime/MML-Definition.html) markup, written in Rust.
+
+This repository ships:
+
+- A **library** exposing two pipelines (MML→MIME compiler, MIME→MML interpreter) and a template builder for compose/reply/forward drafts.
+- A **CLI** wrapping the library, plus four editor-driven commands (`compose`, `reply`, `forward`, `read`) that bundle "template → `$EDITOR` → compile" with a post-edit choice prompt.
+
+## Table of contents
+
+- [Features](#features)
+- [Installation](#installation)
+  - [Pre-built binary](#pre-built-binary)
+  - [Cargo](#cargo)
+  - [Nix](#nix)
+  - [Sources](#sources)
+- [Usage](#usage)
+  - [Library](#library)
+  - [CLI](#cli)
+  - [Configuration](#configuration)
+- [FAQ](#faq)
+- [License](#license)
+- [Social](#social)
+- [Sponsoring](#sponsoring)
 
 ## Features
 
-- MML to MIME messages compilation (`mml compile --help`)
-- MIME to MML messages interpretation (`mml interpret --help`)
+- **MML → MIME compilation** (requires `compiler` feature):
+  - `<#part>` / `<#multipart>` directives with `type`, `filename`, `disposition`, `encoding`, `description`, `name`, `recipient-filename`, dates, etc.
+  - Inline parts, attached parts, nested multiparts (`alternative`, `mixed`, `related`)
+  - File-path expansion via [`shellexpand`](https://crates.io/crates/shellexpand)
+  - MIME-type detection via [`tree_magic_mini`](https://crates.io/crates/tree_magic_mini)
+  - Parse-error reporting via [`ariadne`](https://crates.io/crates/ariadne) (CLI)
+- **MIME → MML interpretation** (requires `interpreter` feature):
+  - Header include / exclude filters
+  - Part include / exclude filters
+  - HTML → text rendering via [`nanohtml2text`](https://crates.io/crates/nanohtml2text)
+  - Attachment save-to-disk
+- **Editor-driven flow** (requires `cli` + `compiler`):
+  - `mml compose` / `mml reply` / `mml forward` — open `$EDITOR`, compile on save, prompt to validate / re-edit / view / abort
+  - `mml read` — MIME on stdin, text on stdout (himalaya `read-with` slot)
+- **TOML configuration** with per-account identities and per-section defaults (`[compose]`, `[reply]`, `[forward]`, `[read]`)
 
-*MML CLI is written in [Rust](https://www.rust-lang.org/), and relies on [cargo features](https://doc.rust-lang.org/cargo/reference/features.html) to enable or disable functionalities. Default features can be found in the `features` section of the [`Cargo.toml`](https://github.com/pimalaya/mml/blob/master/Cargo.toml#L18).*
+*The `mml` library and CLI are written in [Rust](https://www.rust-lang.org/), and rely on [cargo features](https://doc.rust-lang.org/cargo/reference/features.html) to enable or disable functionalities. Default features can be found in the `features` section of the [`Cargo.toml`](https://github.com/pimalaya/mml/blob/master/Cargo.toml), or on [docs.rs](https://docs.rs/crate/mml/latest/features).*
 
 ## Installation
 
-### From release
+### Pre-built binary
 
-MML CLI can be installed with a pre-built binary from the latest [GitHub release](https://github.com/pimalaya/mml/releases):
+The CLI binary `mml` can be installed from the latest [GitHub release](https://github.com/pimalaya/mml/releases) using the install script:
 
-```bash
-# As root:
-$ curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | sudo sh
+```ignore
+# As root
+curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | sudo sh
 
-# As a regular user:
-$ curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | PREFIX=~/.local sh
+# As a regular user
+curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | PREFIX=~/.local sh
 ```
 
-### From CI
+Pre-release builds are also available from the [pre-releases](https://github.com/pimalaya/mml/actions/workflows/pre-releases.yml) GitHub workflow — pick the latest run and grab the artifact matching your OS. These are built from the `master` branch.
 
-MML CLI can be installed with a pre-built binary from the [`pre-releases` GitHub workflow](https://github.com/pimalaya/mml/actions/workflows/pre-releases.yml): take the latest build, find the *Artifacts* section, you should find a pre-built binary matching your OS.
+*Pre-built binaries are built with the default cargo features. If you need a different feature set, use another installation method.*
 
-This workflow is triggered everytime a new commit is pushed on `master`. Such binary is usually more up-to-date than a release, but also less stable.
+### Cargo
 
-*Pre-built binaries are built with [default](https://github.com/pimalaya/mml/blob/master/Cargo.toml#L18) cargo features. If you want to enable or disable a feature, please use another installation method.*
+The CLI binary `mml` can be installed with [cargo](https://doc.rust-lang.org/cargo/):
 
-### Other
+```ignore
+cargo install mml --locked
+```
 
-<details>
-  <summary>Cargo</summary>
+You can also use the git repository for a more up-to-date (but less stable) version:
 
-  MML CLI can be installed with [cargo](https://doc.rust-lang.org/cargo/):
+```ignore
+cargo install --locked --git https://github.com/pimalaya/mml.git
+```
 
-  ```bash
-  $ cargo install mml
+To use `mml` as a library, add it to your `Cargo.toml`:
 
-  # With only IMAP support:
-  $ cargo install mml --no-default-features --features imap
-  ```
+```toml,ignore
+[dependencies]
+mml = { version = "1.0", default-features = false, features = ["compiler", "interpreter"] }
+```
 
-  You can also use the git repository for a more up-to-date (but less stable) version:
+Drop `cli` (and pick only `compiler` and/or `interpreter`) for a slim library build with no clap, no ariadne, no editor integration.
 
-  ```bash
-  $ cargo install --git https://github.com/pimalaya/mml.git mml
-  ```
-</details>
+### Nix
 
-<details>
-  <summary>Nix</summary>
+If you have the [Flakes](https://nixos.wiki/wiki/Flakes) feature enabled:
 
-  MML CLI can be installed with [Nix](https://serokell.io/blog/what-is-nix):
+```ignore
+nix profile install github:pimalaya/mml
+```
 
-  ```bash
-  $ nix-env -i mml
-  ```
+*Or, from within the source tree checkout:*
 
-  You can also use the git repository for a more up-to-date (but less stable) version:
+```ignore
+nix profile install
+```
 
-  ```bash
-  $ nix-env -if https://github.com/pimalaya/mml/archive/master.tar.gz
+*You can also run the CLI directly without installing it:*
 
-  # or, from within the source tree checkout
-  $ nix-env -if .
-  ```
+```ignore
+nix run github:pimalaya/mml -- compile <<<'<#part>Hello, world!<#/part>'
+```
 
-  If you have the [Flakes](https://nixos.wiki/wiki/Flakes) feature enabled:
+### Sources
 
-  ```bash
-  $ nix profile install mml
+```ignore
+git clone https://github.com/pimalaya/mml
+cd mml
+nix develop --command cargo build --release
+```
 
-  # or, from within the source tree checkout
-  $ nix profile install
+## Usage
 
-  # you can also run MML directly without installing it:
-  $ nix run mml
-  ```
-</details>
+### Library
 
-<details>
-  <summary>Sources</summary>
+Compile MML to MIME:
 
-  MML CLI can be installed from sources.
+```rust,ignore
+use mml::compiler::message::MmlCompilerBuilder;
 
-  First you need to install the Rust development environment (see the [rust installation documentation](https://doc.rust-lang.org/cargo/getting-started/installation.html)):
+let mml = "<#part>Hello, world!<#/part>";
+let mime = MmlCompilerBuilder::new()
+    .build(mml)?
+    .compile()?
+    .into_string()?;
 
-  ```bash
-  $ curl https://sh.rustup.rs -sSf | sh
-  ```
+println!("{mime}");
+```
 
-  Then, you need to clone the repository and install dependencies:
+Interpret MIME back to MML:
 
-  ```bash
-  $ git clone https://github.com/pimalaya/mml.git
-  $ cd mml
-  $ cargo check
-  ```
+```rust,ignore
+use mml::interpreter::message::MimeInterpreterBuilder;
 
-  Now, you can build MML:
+let mime = b"From: a@b\r\nTo: c@d\r\nSubject: Hi\r\n\r\nHello!\r\n";
+let mml = MimeInterpreterBuilder::new()
+    .with_show_only_headers(["From", "To", "Subject"])
+    .build()
+    .from_bytes(mime)?;
 
-  ```bash
-  $ cargo build --release
-  ```
+println!("{mml}");
+```
 
-  *Binaries are available under the `target/release` folder.*
-</details>
+### CLI
+
+Compile MML on stdin, emit MIME on stdout:
+
+```ignore
+mml compile <<< '<#part>Hello, world!<#/part>'
+```
+
+Interpret MIME back to MML/text:
+
+```ignore
+mml interpret < message.eml
+```
+
+Open the editor on a fresh compose draft, then emit the compiled MIME message on stdout:
+
+```ignore
+mml compose --from me@example.org
+```
+
+Reply / forward from a piped MIME message:
+
+```ignore
+cat message.eml | mml reply --all
+cat message.eml | mml forward
+```
+
+Read (MIME → text) for himalaya's `read-with`:
+
+```ignore
+cat message.eml | mml read --exclude-header Received,DKIM-Signature
+```
+
+Generate a draft template without opening the editor:
+
+```ignore
+mml template compose --from me@example.org
+mml template reply --all < message.eml
+mml template forward < message.eml
+```
+
+Plug `mml` into [himalaya](https://github.com/pimalaya/himalaya) v2:
+
+```toml,ignore
+[message.composer.mml]
+command = "mml compose"
+default = true
+
+[message.reader.mml]
+command = "mml read"
+default = true
+```
+
+### Configuration
+
+A sample [`config.sample.toml`](https://github.com/pimalaya/mml/blob/master/config.sample.toml) is shipped at the repository root. Drop it into one of:
+
+- `$XDG_CONFIG_HOME/mml/config.toml`
+- `$HOME/.config/mml/config.toml`
+- `$HOME/.mmlrc`
+
+…or pass `-c <PATH>` / set `MML_CONFIG=<PATH>`.
+
+CLI flags always win; config values fill in the blanks. Pick an account with `-a <NAME>`, or flag one entry `default = true`.
 
 ## FAQ
 
-<details>
-  <summary>How to debug MML CLI?</summary>
+### How to debug the CLI?
 
-  The simplest way is to use `--debug` and `--trace` arguments.
+Use `--log <level>` where `<level>` is one of `off`, `error`, `warn`, `info`, `debug`, `trace`:
 
-  The advanced way is based on environment variables:
+```ignore
+mml --log trace compile < message.mml
+```
 
-  - `RUST_LOG=<level>`: determines the log level filter, can be one of `off`, `error`, `warn`, `info`, `debug` and `trace`.
-  - `RUST_SPANTRACE=1`: enables the spantrace (a span represent periods of time in which a program was executing in a particular context).
-  - `RUST_BACKTRACE=1`: enables the error backtrace.
-  - `RUST_BACKTRACE=full`: enables the full error backtrace, which include source lines where the error originated from.
+The `RUST_LOG` environment variable, when set, overrides `--log` and supports per-target filters (see the [`env_logger` documentation](https://docs.rs/env_logger/latest/env_logger/#enabling-logging)).
 
-  Logs are written to the `stderr`, which means that you can redirect them easily to a file:
+Set `RUST_BACKTRACE=1` to enable full error backtraces, including source lines where the error originated from.
 
-  ```
-  RUST_LOG=debug mml 2>/tmp/mml.log
-  ```
-</details>
+Logs are written to `stderr`, so they can be redirected easily to a file:
+
+```ignore
+mml --log trace compile < message.mml 2>/tmp/mml.log
+```
+
+### How does `mml compose` pick the editor?
+
+The [`edit`](https://crates.io/crates/edit) crate resolves `$VISUAL` first, then `$EDITOR`, then an OS default. `mml` does not expose a config knob on top — set `VISUAL` / `EDITOR` in your shell rc file.
+
+## License
+
+This project is licensed under either of:
+
+- [MIT license](LICENSE-MIT)
+- [Apache License, Version 2.0](LICENSE-APACHE)
+
+at your option.
 
 ## Social
 
@@ -144,9 +255,9 @@ This workflow is triggered everytime a new commit is pushed on `master`. Such bi
 
 Special thanks to the [NLnet foundation](https://nlnet.nl/) and the [European Commission](https://www.ngi.eu/) that have been financially supporting the project for years:
 
-- 2022: [NGI Assure](https://nlnet.nl/project/Himalaya/)
-- 2023: [NGI Zero Entrust](https://nlnet.nl/project/Pimalaya/)
-- 2024: [NGI Zero Core](https://nlnet.nl/project/Pimalaya-PIM/) *(still ongoing in 2026)*
+- 2022 → 2023: [NGI Assure](https://nlnet.nl/project/Himalaya/)
+- 2023 → 2024: [NGI Zero Entrust](https://nlnet.nl/project/Pimalaya/)
+- 2024 → 2026: [NGI Zero Core](https://nlnet.nl/project/Pimalaya-PIM/)
 
 If you appreciate the project, feel free to donate using one of the following providers:
 

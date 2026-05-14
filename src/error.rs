@@ -2,12 +2,9 @@ use std::{io, path::PathBuf, result};
 
 use thiserror::Error;
 
-/// The global `Result` alias of the library.
-pub type Result<T> = result::Result<T, Error>;
-
 /// The global `Error` enum of the library.
 #[derive(Debug, Error)]
-pub enum Error {
+pub enum MmlError {
     #[cfg(feature = "compiler")]
     #[error("cannot parse MML body")]
     ParseMmlError(Vec<chumsky::error::Rich<'static, char>>, String),
@@ -41,3 +38,6 @@ pub enum Error {
     #[error("cannot build email")]
     BuildEmailError(#[source] io::Error),
 }
+
+/// The global `Result` alias of the library.
+pub type Result<T> = result::Result<T, MmlError>;

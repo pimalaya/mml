@@ -1,5 +1,5 @@
 {
-  description = "Rust implementation of the Emacs MIME message Meta Language (MML)";
+  description = "CLI to manage emails";
 
   inputs = {
     nixpkgs = {
