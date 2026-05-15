@@ -16,7 +16,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["compiler", "interpreter", "cli"]
+default = ["compiler", "interpreter"]
 cli = ["dep:anyhow", "dep:ariadne", "dep:clap", "dep:edit", "dep:pimalaya-cli", "dep:pimalaya-config", "dep:serde"]
 compiler = ["dep:chumsky", "dep:shellexpand", "dep:tree_magic_mini"]
 interpreter = ["dep:nanohtml2text"]

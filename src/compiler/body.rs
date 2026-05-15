@@ -1,6 +1,5 @@
-//! MML → MIME body compilation: walks the parsed
-//! [`crate::compiler::parser`] AST and emits MIME parts (inline,
-//! attached, multipart) via [`mail_builder`].
+//! MML → MIME body compilation: walks the parsed AST and emits MIME
+//! parts (inline, attached, multipart) via [`mail_builder`].
 
 use std::{ffi::OsStr, fs, ops::Deref, path::PathBuf};
 

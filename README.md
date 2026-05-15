@@ -50,7 +50,7 @@ This repository ships:
 
 The CLI binary `mml` can be installed from the latest [GitHub release](https://github.com/pimalaya/mml/releases) using the install script:
 
-```ignore
+```sh
 # As root
 curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | sudo sh
 
@@ -66,13 +66,13 @@ Pre-release builds are also available from the [pre-releases](https://github.com
 
 The CLI binary `mml` can be installed with [cargo](https://doc.rust-lang.org/cargo/):
 
-```ignore
+```sh
 cargo install mml --locked
 ```
 
 You can also use the git repository for a more up-to-date (but less stable) version:
 
-```ignore
+```sh
 cargo install --locked --git https://github.com/pimalaya/mml.git
 ```
 
@@ -89,25 +89,25 @@ Drop `cli` (and pick only `compiler` and/or `interpreter`) for a slim library bu
 
 If you have the [Flakes](https://nixos.wiki/wiki/Flakes) feature enabled:
 
-```ignore
+```sh
 nix profile install github:pimalaya/mml
 ```
 
 *Or, from within the source tree checkout:*
 
-```ignore
+```sh
 nix profile install
 ```
 
 *You can also run the CLI directly without installing it:*
 
-```ignore
+```sh
 nix run github:pimalaya/mml -- compile <<<'<#part>Hello, world!<#/part>'
 ```
 
 ### Sources
 
-```ignore
+```sh
 git clone https://github.com/pimalaya/mml
 cd mml
 nix develop --command cargo build --release
@@ -149,38 +149,38 @@ println!("{mml}");
 
 Compile MML on stdin, emit MIME on stdout:
 
-```ignore
+```sh
 mml compile <<< '<#part>Hello, world!<#/part>'
 ```
 
 Interpret MIME back to MML/text:
 
-```ignore
+```sh
 mml interpret < message.eml
 ```
 
 Open the editor on a fresh compose draft, then emit the compiled MIME message on stdout:
 
-```ignore
+```sh
 mml compose --from me@example.org
 ```
 
 Reply / forward from a piped MIME message:
 
-```ignore
+```sh
 cat message.eml | mml reply --all
 cat message.eml | mml forward
 ```
 
 Read (MIME → text) for himalaya's `read-with`:
 
-```ignore
+```sh
 cat message.eml | mml read --exclude-header Received,DKIM-Signature
 ```
 
 Generate a draft template without opening the editor:
 
-```ignore
+```sh
 mml template compose --from me@example.org
 mml template reply --all < message.eml
 mml template forward < message.eml
@@ -216,7 +216,7 @@ CLI flags always win; config values fill in the blanks. Pick an account with `-a
 
 Use `--log <level>` where `<level>` is one of `off`, `error`, `warn`, `info`, `debug`, `trace`:
 
-```ignore
+```sh
 mml --log trace compile < message.mml
 ```
 
@@ -226,7 +226,7 @@ Set `RUST_BACKTRACE=1` to enable full error backtraces, including source lines w
 
 Logs are written to `stderr`, so they can be redirected easily to a file:
 
-```ignore
+```sh
 mml --log trace compile < message.mml 2>/tmp/mml.log
 ```
 
