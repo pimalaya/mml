@@ -35,14 +35,14 @@ tempfile = "3"
 
 [dependencies]
 anyhow = { version = "1", optional = true }
-ariadne = { version = "0.3", optional = true }
-chumsky = { version = "=1.0.0-alpha.8", optional = true, features = ["std"] }
+ariadne = { version = "0.6", optional = true }
+chumsky = { version = "0.13", optional = true, features = ["std"] }
 clap = { version = "4.4", features = ["derive", "env", "wrap_help"], optional = true }
 edit = { version = "0.1", optional = true }
 log = "0.4"
-mail-builder = "0.3"
-mail-parser = "0.9"
-nanohtml2text = { version = "0.1", optional = true }
+mail-builder = "0.4"
+mail-parser = "0.11"
+nanohtml2text = { version = "0.2", optional = true }
 once_cell = "1.21"
 pimalaya-cli = { version = "0.0.1", default-features = false, features = ["prompt", "terminal"], optional = true }
 pimalaya-config = { version = "0.0.1", default-features = false, features = ["toml"], optional = true }

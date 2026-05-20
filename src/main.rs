@@ -15,6 +15,6 @@ fn main() {
 fn execute(cli: MmlCli, printer: &mut StdoutPrinter) -> Result<()> {
     Logger::try_init(&cli.log)?;
     let account = cli.account.name.as_deref();
-    let config = Config::from_paths_or_default(&cli.config_paths.paths)?.unwrap_or_default();
+    let config = Config::from_paths_or_default(&cli.config_paths)?.unwrap_or_default();
     cli.command.execute(printer, config, account)
 }

@@ -79,13 +79,15 @@ fn display_texts(texts: &[Cow<str>]) -> String {
 }
 
 fn display_content_type(ctype: &ContentType) -> String {
-    let attrs = ctype.attributes().unwrap_or_default().iter().fold(
-        String::new(),
-        |mut attrs, (key, val)| {
-            attrs.push_str(&format!("; {key}={val}"));
-            attrs
-        },
-    );
+    let attrs =
+        ctype
+            .attributes()
+            .unwrap_or_default()
+            .iter()
+            .fold(String::new(), |mut attrs, attr| {
+                attrs.push_str(&format!("; {}={}", attr.name, attr.value));
+                attrs
+            });
     let stype = ctype.subtype().unwrap_or("unknown");
     let ctype = ctype.ctype();
 
@@ -148,8 +150,8 @@ pub(crate) fn to_builder_val<'a>(header: &'a Header<'a>) -> HeaderType<'a> {
         HeaderValue::ContentType(ctype) => {
             let mut final_ctype = ContentType::new(ctype.c_type.as_ref());
             if let Some(attrs) = &ctype.attributes {
-                for (key, val) in attrs {
-                    final_ctype = final_ctype.attribute(key.as_ref(), val.as_ref());
+                for attr in attrs {
+                    final_ctype = final_ctype.attribute(attr.name.as_ref(), attr.value.as_ref());
                 }
             }
             final_ctype.into()
@@ -161,7 +163,7 @@ pub(crate) fn to_builder_val<'a>(header: &'a Header<'a>) -> HeaderType<'a> {
 
 #[cfg(test)]
 mod tests {
-    use mail_parser::{Addr, ContentType, Group};
+    use mail_parser::{Addr, Attribute, ContentType, Group};
 
     #[test]
     fn display_empty_addr() {
@@ -313,8 +315,14 @@ mod tests {
             c_type: "text".into(),
             c_subtype: Some("plain".into()),
             attributes: Some(vec![
-                ("key".into(), "val".into()),
-                ("key2".into(), "val2".into()),
+                Attribute {
+                    name: "key".into(),
+                    value: "val".into(),
+                },
+                Attribute {
+                    name: "key2".into(),
+                    value: "val2".into(),
+                },
             ]),
         };
 

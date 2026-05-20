@@ -3,12 +3,15 @@
 //! merging the per-account DTO from the loaded
 //! [`crate::cli::config::Config`].
 
+use std::path::PathBuf;
+
 use anyhow::Result;
 use clap::{CommandFactory, Parser, Subcommand};
 use pimalaya_cli::{
     clap::{
-        args::{AccountFlag, ConfigPathsArg, JsonFlag, LogFlags},
+        args::{AccountFlag, JsonFlag, LogFlags},
         commands::{CompletionCommand, ManualCommand},
+        parsers::path_parser,
     },
     long_version,
     printer::Printer,
@@ -38,8 +41,15 @@ pub struct MmlCli {
     #[command(subcommand)]
     pub command: MmlCommand,
 
-    #[command(flatten)]
-    pub config_paths: ConfigPathsArg,
+    /// Override the default configuration file path.
+    ///
+    /// The given paths are shell-expanded then canonicalized (if
+    /// applicable). Multiple paths can be provided by delimiting them
+    /// with `:` (like `$PATH` in a POSIX shell); subsequent paths are
+    /// merged with the first.
+    #[arg(short, long = "config", global = true, env = "MML_CONFIG")]
+    #[arg(value_name = "PATH", value_parser = path_parser, value_delimiter = ':')]
+    pub config_paths: Vec<PathBuf>,
     #[command(flatten)]
     pub account: AccountFlag,
     #[command(flatten)]

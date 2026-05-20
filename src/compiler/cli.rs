@@ -38,7 +38,7 @@ impl CompileCommand {
         match compiler.compile() {
             Err(MmlError::ParseMmlError(errs, body)) => {
                 for err in errs {
-                    Report::build(ReportKind::Error, (), err.span().start)
+                    Report::build(ReportKind::Error, err.span().into_range())
                         .with_message("cannot parse MML message")
                         .with_label(
                             Label::new(err.span().into_range())
