@@ -18,11 +18,11 @@ use pimalaya_cli::{
 };
 use pimalaya_config::toml::TomlConfig;
 
-#[cfg(feature = "interpreter")]
-use crate::cli::read::ReadCommand;
-use crate::cli::{account::Account, config::Config, template::TemplateCommand};
-#[cfg(feature = "compiler")]
+use crate::cli::{account::Account, config::Config};
+#[cfg(all(feature = "compiler", feature = "interpreter"))]
 use crate::cli::{compose::ComposeCommand, forward::ForwardCommand, reply::ReplyCommand};
+#[cfg(feature = "interpreter")]
+use crate::cli::{read::ReadCommand, template::TemplateCommand};
 #[cfg(feature = "compiler")]
 use crate::compiler::cli::CompileCommand;
 #[cfg(feature = "interpreter")]
@@ -57,6 +57,7 @@ pub struct MmlCli {
 
 #[derive(Subcommand, Debug)]
 pub enum MmlCommand {
+    #[cfg(feature = "interpreter")]
     #[command(subcommand)]
     #[clap(visible_alias = "tpl")]
     Templates(TemplateCommand),
@@ -66,11 +67,11 @@ pub enum MmlCommand {
     #[cfg(feature = "interpreter")]
     Interpret(InterpretCommand),
 
-    #[cfg(feature = "compiler")]
+    #[cfg(all(feature = "compiler", feature = "interpreter"))]
     Compose(ComposeCommand),
-    #[cfg(feature = "compiler")]
+    #[cfg(all(feature = "compiler", feature = "interpreter"))]
     Reply(ReplyCommand),
-    #[cfg(feature = "compiler")]
+    #[cfg(all(feature = "compiler", feature = "interpreter"))]
     Forward(ForwardCommand),
     #[cfg(feature = "interpreter")]
     Read(ReadCommand),
@@ -99,6 +100,7 @@ impl MmlCommand {
         };
 
         match self {
+            #[cfg(feature = "interpreter")]
             Self::Templates(cmd) => cmd.execute(printer, account()?),
 
             #[cfg(feature = "compiler")]
@@ -106,11 +108,11 @@ impl MmlCommand {
             #[cfg(feature = "interpreter")]
             Self::Interpret(cmd) => cmd.execute(printer, account()?),
 
-            #[cfg(feature = "compiler")]
+            #[cfg(all(feature = "compiler", feature = "interpreter"))]
             Self::Compose(cmd) => cmd.execute(printer, account()?),
-            #[cfg(feature = "compiler")]
+            #[cfg(all(feature = "compiler", feature = "interpreter"))]
             Self::Reply(cmd) => cmd.execute(printer, account()?),
-            #[cfg(feature = "compiler")]
+            #[cfg(all(feature = "compiler", feature = "interpreter"))]
             Self::Forward(cmd) => cmd.execute(printer, account()?),
             #[cfg(feature = "interpreter")]
             Self::Read(cmd) => cmd.execute(printer, account()?),
