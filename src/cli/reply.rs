@@ -1,6 +1,6 @@
 //! `mml reply` — editor-driven reply composer. Reads the source MIME
 //! message on stdin, builds a reply template via
-//! [`crate::template::reply::builder::TemplateBuilderReply`], runs
+//! [`crate::template::reply::TemplateBuilderReply`], runs
 //! the [`crate::cli::editor::edit_loop`], and emits the compiled
 //! MIME bytes on stdout.
 
@@ -13,7 +13,7 @@ use pimalaya_cli::printer::Printer;
 
 use crate::{
     cli::{account::Account, args::HeaderRawArgs, editor::edit_loop, stdin::format_stdin},
-    template::reply::builder::{
+    template::reply::{
         TemplateBuilderReply, TemplateReplyPostingStyle, TemplateReplySignatureStyle,
     },
 };

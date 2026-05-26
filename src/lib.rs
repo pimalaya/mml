@@ -10,5 +10,7 @@ pub mod error;
 pub mod interpreter;
 pub mod template;
 
+#[cfg(any(feature = "compiler", feature = "interpreter"))]
 pub(crate) mod grammar;
+#[cfg(any(feature = "compiler", feature = "interpreter"))]
 pub(crate) mod header;

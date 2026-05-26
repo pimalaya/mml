@@ -35,9 +35,9 @@ use pimalaya_config::toml::TomlConfig;
 use serde::Deserialize;
 
 use crate::template::{
-    compose::builder::TemplateComposeSignatureStyle,
-    forward::builder::{TemplateForwardPostingStyle, TemplateForwardSignatureStyle},
-    reply::builder::{TemplateReplyPostingStyle, TemplateReplySignatureStyle},
+    compose::TemplateComposeSignatureStyle,
+    forward::{TemplateForwardPostingStyle, TemplateForwardSignatureStyle},
+    reply::{TemplateReplyPostingStyle, TemplateReplySignatureStyle},
 };
 
 #[derive(Clone, Debug, Default, Deserialize)]

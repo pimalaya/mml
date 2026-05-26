@@ -305,9 +305,7 @@ mod tests {
     use mail_parser::MessageParser;
 
     use crate::template::{
-        reply::builder::{
-            TemplateBuilderReply, TemplateReplyPostingStyle, TemplateReplySignatureStyle,
-        },
+        reply::{TemplateBuilderReply, TemplateReplyPostingStyle, TemplateReplySignatureStyle},
         types::Template,
     };
 

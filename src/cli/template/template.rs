@@ -2,11 +2,11 @@ use anyhow::Result;
 use clap::Subcommand;
 use pimalaya_cli::printer::Printer;
 
-use crate::{
-    cli::account::Account,
+use crate::cli::{
+    account::Account,
     template::{
-        compose::cli::TemplateComposeCommand, forward::cli::TemplateForwardCommand,
-        reply::cli::TemplateReplyCommand,
+        compose::TemplateComposeCommand, forward::TemplateForwardCommand,
+        reply::TemplateReplyCommand,
     },
 };
 

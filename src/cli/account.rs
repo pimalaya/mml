@@ -16,9 +16,9 @@ use std::path::PathBuf;
 use crate::{
     cli::config::{AccountConfig, Config},
     template::{
-        compose::builder::TemplateComposeSignatureStyle,
-        forward::builder::{TemplateForwardPostingStyle, TemplateForwardSignatureStyle},
-        reply::builder::{TemplateReplyPostingStyle, TemplateReplySignatureStyle},
+        compose::TemplateComposeSignatureStyle,
+        forward::{TemplateForwardPostingStyle, TemplateForwardSignatureStyle},
+        reply::{TemplateReplyPostingStyle, TemplateReplySignatureStyle},
     },
 };
 

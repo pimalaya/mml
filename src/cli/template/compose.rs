@@ -4,7 +4,7 @@ use pimalaya_cli::printer::Printer;
 
 use crate::{
     cli::{account::Account, args::HeaderRawArgs},
-    template::compose::builder::{TemplateBuilderCompose, TemplateComposeSignatureStyle},
+    template::compose::{TemplateBuilderCompose, TemplateComposeSignatureStyle},
 };
 
 /// Build a new message template (headers + body, no `$EDITOR`).

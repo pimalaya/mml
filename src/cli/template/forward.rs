@@ -12,45 +12,40 @@ use crate::{
         args::HeaderRawArgs,
         stdin::{format_stdin, format_str},
     },
-    template::reply::builder::{
-        TemplateBuilderReply, TemplateReplyPostingStyle, TemplateReplySignatureStyle,
+    template::forward::{
+        TemplateBuilderForward, TemplateForwardPostingStyle, TemplateForwardSignatureStyle,
     },
 };
 
 type MimeMessage = String;
 
-/// Build a reply template from a source MIME message.
+/// Build a forward template from a source MIME message.
 ///
 /// Identity and style fields default to the merged account (global
 /// + `[accounts.<name>]`); CLI flags override them.
 #[derive(Debug, Parser)]
-pub struct TemplateReplyCommand {
+pub struct TemplateForwardCommand {
     /// Source MIME message (file path or raw string). Defaults to
     /// stdin.
     #[arg(value_parser = parse_mime)]
     pub mime: Option<MimeMessage>,
 
-    /// Include every recipient of the source message. CLI-only —
-    /// not configurable.
-    #[arg(long = "all", short = 'A')]
-    pub reply_all: bool,
-
-    #[arg(long, short)]
+    #[arg(short, long)]
     pub from: Option<String>,
 
-    #[arg(long, short = 'F')]
+    #[arg(short = 'F', long)]
     pub from_name: Option<String>,
 
-    #[arg(long, short)]
+    #[arg(short, long)]
     pub signature: Option<String>,
 
-    #[arg(long, short = 'S')]
-    pub signature_style: Option<TemplateReplySignatureStyle>,
+    #[arg(short = 'S', long)]
+    pub signature_style: Option<TemplateForwardSignatureStyle>,
 
-    #[arg(long, short = 'P')]
-    pub posting_style: Option<TemplateReplyPostingStyle>,
+    #[arg(short = 'P', long)]
+    pub posting_style: Option<TemplateForwardPostingStyle>,
 
-    #[arg(long, short = 'Q')]
+    #[arg(short = 'Q', long)]
     pub quote_headline: Option<String>,
 
     #[command(flatten)]
@@ -60,15 +55,15 @@ pub struct TemplateReplyCommand {
     pub body: String,
 }
 
-impl TemplateReplyCommand {
+impl TemplateForwardCommand {
     pub fn execute(self, printer: &mut impl Printer, account: Account) -> Result<()> {
         let account = account
             .with_from(self.from)
             .with_from_name(self.from_name)
             .with_signature(self.signature)
-            .with_reply_signature_style(self.signature_style)
-            .with_reply_posting_style(self.posting_style)
-            .with_reply_quote_headline(self.quote_headline);
+            .with_forward_signature_style(self.signature_style)
+            .with_forward_posting_style(self.posting_style)
+            .with_forward_quote_headline(self.quote_headline);
 
         let signature = account.signature();
 
@@ -81,12 +76,11 @@ impl TemplateReplyCommand {
             bail!("invalid or malformed MIME message");
         };
 
-        let tpl = TemplateBuilderReply {
-            reply_all: self.reply_all,
+        let tpl = TemplateBuilderForward {
             signature,
-            signature_style: account.reply_signature_style.unwrap_or_default(),
-            posting_style: account.reply_posting_style.unwrap_or_default(),
-            quote_headline: account.reply_quote_headline.unwrap_or_default(),
+            signature_style: account.forward_signature_style.unwrap_or_default(),
+            posting_style: account.forward_posting_style.unwrap_or_default(),
+            quote_headline: account.forward_quote_headline.unwrap_or_default(),
             from,
             from_name: account.from_name,
             headers: self.headers.raw,

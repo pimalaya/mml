@@ -1,6 +1,6 @@
 //! `mml forward` — editor-driven forward composer. Same shape as
 //! [`crate::cli::reply`], built around
-//! [`crate::template::forward::builder::TemplateBuilderForward`].
+//! [`crate::template::forward::TemplateBuilderForward`].
 
 use std::io::{stdout, Write};
 
@@ -11,7 +11,7 @@ use pimalaya_cli::printer::Printer;
 
 use crate::{
     cli::{account::Account, args::HeaderRawArgs, editor::edit_loop, stdin::format_stdin},
-    template::forward::builder::{
+    template::forward::{
         TemplateBuilderForward, TemplateForwardPostingStyle, TemplateForwardSignatureStyle,
     },
 };

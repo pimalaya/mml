@@ -108,7 +108,7 @@ mod tests {
     use concat_with::concat_line;
 
     use crate::template::{
-        compose::builder::{TemplateBuilderCompose, TemplateComposeSignatureStyle},
+        compose::{TemplateBuilderCompose, TemplateComposeSignatureStyle},
         types::Template,
     };
 

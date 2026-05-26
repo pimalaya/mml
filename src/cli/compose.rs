@@ -12,7 +12,7 @@ use pimalaya_cli::printer::Printer;
 
 use crate::{
     cli::{account::Account, args::HeaderRawArgs, editor::edit_loop},
-    template::compose::builder::{TemplateBuilderCompose, TemplateComposeSignatureStyle},
+    template::compose::{TemplateBuilderCompose, TemplateComposeSignatureStyle},
 };
 
 /// Compose a new message: build the template, drive `$EDITOR`,

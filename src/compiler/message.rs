@@ -121,7 +121,7 @@ impl<'a> MmlCompileResult<'a> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "interpreter"))]
 mod tests {
     use concat_with::concat_line;
 

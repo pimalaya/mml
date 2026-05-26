@@ -2,11 +2,19 @@
 //! shared by the [`crate::compiler`] and [`crate::interpreter`]
 //! pipelines.
 
+#[cfg(feature = "interpreter")]
 use std::borrow::Cow;
 
+#[cfg(feature = "compiler")]
 use mail_builder::headers::HeaderType;
-use mail_parser::{Addr, Address, ContentType, Group, Header, HeaderName, HeaderValue};
+#[cfg(feature = "interpreter")]
+use mail_parser::{Addr, ContentType, Group};
+#[cfg(any(feature = "compiler", feature = "interpreter"))]
+use mail_parser::{Address, HeaderValue};
+#[cfg(feature = "compiler")]
+use mail_parser::{Header, HeaderName};
 
+#[cfg(feature = "interpreter")]
 pub(crate) fn display_value(key: &str, val: &HeaderValue) -> String {
     match val {
         HeaderValue::Address(Address::List(addrs)) => display_addrs(addrs),
@@ -26,6 +34,7 @@ pub(crate) fn display_value(key: &str, val: &HeaderValue) -> String {
     }
 }
 
+#[cfg(feature = "interpreter")]
 fn display_addr(addr: &Addr) -> String {
     let email = match &addr.address {
         Some(addr) => addr.to_string(),
@@ -38,6 +47,7 @@ fn display_addr(addr: &Addr) -> String {
     }
 }
 
+#[cfg(feature = "interpreter")]
 fn display_addrs(addrs: &[Addr]) -> String {
     addrs.iter().fold(String::new(), |mut addrs, addr| {
         if !addrs.is_empty() {
@@ -48,6 +58,7 @@ fn display_addrs(addrs: &[Addr]) -> String {
     })
 }
 
+#[cfg(feature = "interpreter")]
 fn display_group(group: &Group) -> String {
     let name = match &group.name {
         Some(name) => name.to_string(),
@@ -58,6 +69,7 @@ fn display_group(group: &Group) -> String {
     format!("{name}:{addrs};")
 }
 
+#[cfg(feature = "interpreter")]
 fn display_groups(groups: &[Group]) -> String {
     groups.iter().fold(String::new(), |mut groups, group| {
         if !groups.is_empty() {
@@ -68,6 +80,7 @@ fn display_groups(groups: &[Group]) -> String {
     })
 }
 
+#[cfg(feature = "interpreter")]
 fn display_texts(texts: &[Cow<str>]) -> String {
     texts.iter().fold(String::new(), |mut texts, text| {
         if !texts.is_empty() {
@@ -78,6 +91,7 @@ fn display_texts(texts: &[Cow<str>]) -> String {
     })
 }
 
+#[cfg(feature = "interpreter")]
 fn display_content_type(ctype: &ContentType) -> String {
     let attrs =
         ctype
@@ -94,6 +108,7 @@ fn display_content_type(ctype: &ContentType) -> String {
     format!("{ctype}/{stype}{attrs}")
 }
 
+#[cfg(feature = "compiler")]
 pub(crate) fn to_builder_val<'a>(header: &'a Header<'a>) -> HeaderType<'a> {
     use mail_builder::headers::{
         address::Address as AddressBuilder, content_type::ContentType, date::Date, raw::Raw,
@@ -161,7 +176,7 @@ pub(crate) fn to_builder_val<'a>(header: &'a Header<'a>) -> HeaderType<'a> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "interpreter"))]
 mod tests {
     use mail_parser::{Addr, Attribute, ContentType, Group};
 

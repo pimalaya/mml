@@ -175,7 +175,7 @@ mod tests {
     use concat_with::concat_line;
     use mail_parser::MessageParser;
 
-    use crate::template::{forward::builder::TemplateBuilderForward, types::Template};
+    use crate::template::{forward::TemplateBuilderForward, types::Template};
 
     #[test]
     fn default() {

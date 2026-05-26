@@ -20,16 +20,13 @@ use pimalaya_config::toml::TomlConfig;
 
 #[cfg(feature = "interpreter")]
 use crate::cli::read::ReadCommand;
+use crate::cli::{account::Account, config::Config, template::TemplateCommand};
 #[cfg(feature = "compiler")]
 use crate::cli::{compose::ComposeCommand, forward::ForwardCommand, reply::ReplyCommand};
 #[cfg(feature = "compiler")]
 use crate::compiler::cli::CompileCommand;
 #[cfg(feature = "interpreter")]
 use crate::interpreter::cli::InterpretCommand;
-use crate::{
-    cli::{account::Account, config::Config},
-    template::cli::TemplateCommand,
-};
 
 /// Root CLI parser.
 #[derive(Parser, Debug)]

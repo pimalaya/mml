@@ -15,10 +15,10 @@ This repository ships:
   - [Cargo](#cargo)
   - [Nix](#nix)
   - [Sources](#sources)
+- [Configuration](#configuration)
 - [Usage](#usage)
   - [Library](#library)
   - [CLI](#cli)
-  - [Configuration](#configuration)
 - [FAQ](#faq)
 - [License](#license)
 - [Social](#social)
@@ -38,11 +38,12 @@ This repository ships:
   - HTML → text rendering via [`nanohtml2text`](https://crates.io/crates/nanohtml2text)
   - Attachment save-to-disk
 - **Editor-driven flow** (requires `cli` + `compiler`):
-  - `mml compose` / `mml reply` / `mml forward` — open `$EDITOR`, compile on save, prompt to validate / re-edit / view / abort
-  - `mml read` — MIME on stdin, text on stdout (himalaya `read-with` slot)
+  - `mml compose` / `mml reply` / `mml forward`: open `$EDITOR`, compile on save, prompt to validate / re-edit / view / abort
+  - `mml read`: MIME on stdin, text on stdout (himalaya `read-with` slot)
 - **TOML configuration** with per-account identities and per-section defaults (`[compose]`, `[reply]`, `[forward]`, `[read]`)
 
-*The `mml` library and CLI are written in [Rust](https://www.rust-lang.org/), and rely on [cargo features](https://doc.rust-lang.org/cargo/reference/features.html) to enable or disable functionalities. Default features can be found in the `features` section of the [`Cargo.toml`](https://github.com/pimalaya/mml/blob/master/Cargo.toml), or on [docs.rs](https://docs.rs/crate/mml/latest/features).*
+> [!TIP]
+> MML is written in [Rust](https://www.rust-lang.org/) and uses [cargo features](https://doc.rust-lang.org/cargo/reference/features.html) to gate functionality. The default feature set is declared in [Cargo.toml](./Cargo.toml).
 
 ## Installation
 
@@ -50,21 +51,24 @@ This repository ships:
 
 The CLI binary `mml` can be installed from the latest [GitHub release](https://github.com/pimalaya/mml/releases) using the install script:
 
-```sh
-# As root
-curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | sudo sh
+*As root:*
 
-# As a regular user
+```sh
+curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | sudo sh
+```
+
+*As a regular user:*
+
+```sh
 curl -sSL https://raw.githubusercontent.com/pimalaya/mml/master/install.sh | PREFIX=~/.local sh
 ```
 
-Pre-release builds are also available from the [pre-releases](https://github.com/pimalaya/mml/actions/workflows/pre-releases.yml) GitHub workflow — pick the latest run and grab the artifact matching your OS. These are built from the `master` branch.
+For a more up-to-date version, check out the [pre-releases](https://github.com/pimalaya/mml/actions/workflows/pre-releases.yml) GitHub workflow: pick the latest run and grab the artifact matching your OS. These are built from the `master` branch.
 
-*Pre-built binaries are built with the default cargo features. If you need a different feature set, use another installation method.*
+> [!NOTE]
+> Pre-built binaries are built with the default cargo features. If you need a different feature set, use another installation method.
 
 ### Cargo
-
-The CLI binary `mml` can be installed with [cargo](https://doc.rust-lang.org/cargo/):
 
 ```sh
 cargo install mml --locked
@@ -78,7 +82,7 @@ cargo install --locked --git https://github.com/pimalaya/mml.git
 
 To use `mml` as a library, add it to your `Cargo.toml`:
 
-```toml,ignore
+```toml
 [dependencies]
 mml = { version = "1.0", default-features = false, features = ["compiler", "interpreter"] }
 ```
@@ -93,13 +97,7 @@ If you have the [Flakes](https://nixos.wiki/wiki/Flakes) feature enabled:
 nix profile install github:pimalaya/mml
 ```
 
-*Or, from within the source tree checkout:*
-
-```sh
-nix profile install
-```
-
-*You can also run the CLI directly without installing it:*
+Or run without installing:
 
 ```sh
 nix run github:pimalaya/mml -- compile <<<'<#part>Hello, world!<#/part>'
@@ -110,8 +108,20 @@ nix run github:pimalaya/mml -- compile <<<'<#part>Hello, world!<#/part>'
 ```sh
 git clone https://github.com/pimalaya/mml
 cd mml
-nix develop --command cargo build --release
+nix run
 ```
+
+## Configuration
+
+A sample [config.sample.toml](./config.sample.toml) is shipped at the repository root. Drop it into one of:
+
+- `$XDG_CONFIG_HOME/mml/config.toml`
+- `$HOME/.config/mml/config.toml`
+- `$HOME/.mmlrc`
+
+Override the path with `-c <PATH>` or `MML_CONFIG=<PATH>`.
+
+CLI flags always win; config values fill in the blanks. Pick an account with `-a <NAME>`, or flag one entry `default = true`.
 
 ## Usage
 
@@ -188,7 +198,7 @@ mml template forward < message.eml
 
 Plug `mml` into [himalaya](https://github.com/pimalaya/himalaya) v2:
 
-```toml,ignore
+```toml
 [message.composer.mml]
 command = "mml compose"
 default = true
@@ -198,41 +208,31 @@ command = "mml read"
 default = true
 ```
 
-### Configuration
-
-A sample [`config.sample.toml`](https://github.com/pimalaya/mml/blob/master/config.sample.toml) is shipped at the repository root. Drop it into one of:
-
-- `$XDG_CONFIG_HOME/mml/config.toml`
-- `$HOME/.config/mml/config.toml`
-- `$HOME/.mmlrc`
-
-…or pass `-c <PATH>` / set `MML_CONFIG=<PATH>`.
-
-CLI flags always win; config values fill in the blanks. Pick an account with `-a <NAME>`, or flag one entry `default = true`.
-
 ## FAQ
 
-### How to debug the CLI?
+<details>
+  <summary>How to debug the CLI?</summary>
 
-Use `--log <level>` where `<level>` is one of `off`, `error`, `warn`, `info`, `debug`, `trace`:
+  Use `--log <level>` where `<level>` is one of `off`, `error`, `warn`, `info`, `debug`, `trace`:
 
-```sh
-mml --log trace compile < message.mml
-```
+  ```sh
+  mml --log trace compile < message.mml
+  ```
 
-The `RUST_LOG` environment variable, when set, overrides `--log` and supports per-target filters (see the [`env_logger` documentation](https://docs.rs/env_logger/latest/env_logger/#enabling-logging)).
+  The `RUST_LOG` environment variable, when set, overrides `--log` and supports per-target filters (see the [env_logger](https://docs.rs/env_logger/latest/env_logger/#enabling-logging) documentation). `RUST_BACKTRACE=1` enables full error backtraces, including source lines where the error originated from.
 
-Set `RUST_BACKTRACE=1` to enable full error backtraces, including source lines where the error originated from.
+  Logs are written to `stderr`, so they can be redirected easily to a file:
 
-Logs are written to `stderr`, so they can be redirected easily to a file:
+  ```sh
+  mml --log trace compile < message.mml 2>/tmp/mml.log
+  ```
+</details>
 
-```sh
-mml --log trace compile < message.mml 2>/tmp/mml.log
-```
+<details>
+  <summary>How does `mml compose` pick the editor?</summary>
 
-### How does `mml compose` pick the editor?
-
-The [`edit`](https://crates.io/crates/edit) crate resolves `$VISUAL` first, then `$EDITOR`, then an OS default. `mml` does not expose a config knob on top — set `VISUAL` / `EDITOR` in your shell rc file.
+  The [edit](https://crates.io/crates/edit) crate resolves `$VISUAL` first, then `$EDITOR`, then an OS default. `mml` does not expose a config knob on top: set `VISUAL` / `EDITOR` in your shell rc file.
+</details>
 
 ## License
 
@@ -258,6 +258,7 @@ Special thanks to the [NLnet foundation](https://nlnet.nl/) and the [European Co
 - 2022 → 2023: [NGI Assure](https://nlnet.nl/project/Himalaya/)
 - 2023 → 2024: [NGI Zero Entrust](https://nlnet.nl/project/Pimalaya/)
 - 2024 → 2026: [NGI Zero Core](https://nlnet.nl/project/Pimalaya-PIM/)
+- *2027 in preparation…*
 
 If you appreciate the project, feel free to donate using one of the following providers:
 

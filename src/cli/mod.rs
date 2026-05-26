@@ -14,3 +14,4 @@ pub mod read;
 #[cfg(feature = "compiler")]
 pub mod reply;
 pub mod stdin;
+pub mod template;
