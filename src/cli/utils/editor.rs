@@ -2,22 +2,23 @@
 //!
 //! The editor is whatever the `edit` crate resolves: `$VISUAL`, then
 //! `$EDITOR`, then an OS default. mml does not expose a config
-//! override on top — set `VISUAL` / `EDITOR` in your shell.
+//! override on top; set `VISUAL` / `EDITOR` in your shell.
 //!
 //! The flow is: open the editor on the template, try to compile MML
-//! → MIME, surface compile errors via Ariadne on stderr, then prompt
-//! the user with [`crate::cli::choice::post_edit`] (validate / edit
-//! again / view MML / view MIME / abort). The loop only exits on
-//! `Validate` (returns `Some(mime)`) or `Abort` (returns `None`).
+//! into MIME, surface compile errors via Ariadne on stderr, then
+//! prompt the user with [`crate::cli::utils::choice::post_edit`]
+//! (done / edit again / view MML / view MIME / abort). The loop only
+//! exits on `Done` (returns `Some(mime)`) or `Abort` (returns
+//! `None`).
 
-use std::io::{stderr, Write};
+use std::io::{Write, stderr};
 
 use anyhow::{Context, Result};
 use ariadne::{Color, Label, Report, ReportKind, Source};
 use edit::Builder as EditBuilder;
 
 use crate::{
-    cli::choice::{post_edit, PostEditChoice},
+    cli::utils::choice::{PostEditChoice, post_edit},
     compiler::message::MmlCompilerBuilder,
     error::MmlError,
     template::types::Template,

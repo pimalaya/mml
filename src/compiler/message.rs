@@ -2,7 +2,7 @@
 //! the body off to [`crate::compiler::body`], stitches the result
 //! into a [`mail_builder::MessageBuilder`].
 
-use mail_builder::{headers::text::Text, MessageBuilder};
+use mail_builder::{MessageBuilder, headers::text::Text};
 use mail_parser::{Message, MessageParser};
 
 use crate::{

@@ -1,9 +1,9 @@
-//! Forward template builder — see [`TemplateBuilderForward`] for
+//! Forward template builder: see [`TemplateBuilderForward`] for
 //! building a draft forward from a source MIME [`Message`].
 
 use mail_builder::{
-    headers::{address::Address, raw::Raw},
     MessageBuilder,
+    headers::{address::Address, raw::Raw},
 };
 use mail_parser::Message;
 use once_cell::sync::Lazy;

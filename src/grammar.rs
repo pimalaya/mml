@@ -1,4 +1,4 @@
-//! Shared MML grammar primitives — directive markers, attribute
+//! Shared MML grammar primitives: directive markers, attribute
 //! keys/values, and character literals used by both the
 //! [`crate::compiler`] and [`crate::interpreter`] pipelines.
 

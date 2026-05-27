@@ -496,7 +496,7 @@ fn is_plain(part: &MessagePart) -> bool {
 #[cfg(test)]
 mod tests {
     use concat_with::concat_line;
-    use mail_builder::{mime::MimePart, MessageBuilder};
+    use mail_builder::{MessageBuilder, mime::MimePart};
 
     use super::{FilterParts, MimeBodyInterpreter};
 

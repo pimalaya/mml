@@ -1,7 +1,7 @@
-//! Merged runtime account — the DTO between TOML config
+//! Merged runtime account: the DTO between TOML config
 //! deserialization and the commands that consume it.
 //!
-//! Built by [`crate::cli::mml::MmlCommand::execute`] in this order:
+//! Built by [`crate::cli::Command::execute`] in this order:
 //!
 //! 1. [`Account::default`].
 //! 2. Fold the global [`crate::cli::config::Config`] via

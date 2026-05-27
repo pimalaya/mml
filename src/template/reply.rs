@@ -1,11 +1,11 @@
-//! Reply template builder — see [`TemplateBuilderReply`] for building
+//! Reply template builder: see [`TemplateBuilderReply`] for building
 //! a draft reply from a source MIME [`Message`].
 
 use std::{borrow::Cow, collections::HashSet};
 
 use mail_builder::{
-    headers::{address::Address, raw::Raw},
     MessageBuilder,
+    headers::{address::Address, raw::Raw},
 };
 use mail_parser::{Addr, HeaderValue, Message};
 use once_cell::sync::Lazy;
@@ -66,7 +66,6 @@ impl TemplateBuilderReply {
             ]));
 
         let mut cursor = TemplateCursor::default();
-
         let mut builder = MessageBuilder::new();
 
         let me = Addr::new(self.from_name.as_deref(), &self.from);

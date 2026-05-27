@@ -1,36 +1,28 @@
-use std::fs;
+//! `mml compile`: MML to MIME pipeline. Reads MML from the
+//! positional argument or stdin and writes the resulting MIME
+//! message to stdout. Parse errors are rendered as Ariadne
+//! diagnostics on stderr and the process still exits successfully so
+//! the caller can pipe stdout unconditionally.
 
 use anyhow::{Context, Result};
 use ariadne::{Color, Label, Report, ReportKind, Source};
 use clap::Parser;
-use log::debug;
-use pimalaya_cli::{clap::parsers::path_parser, printer::Printer};
+use pimalaya_cli::printer::Printer;
 
-use crate::{
-    cli::stdin::{format_stdin, format_str},
-    compiler::message::MmlCompilerBuilder,
-    error::MmlError,
-};
-
-type MmlMessage = String;
+use crate::{cli::args::MessageArg, compiler::message::MmlCompilerBuilder, error::MmlError};
 
 /// Compile an MML message into a MIME message.
-///
-/// Reads MML from the positional argument (file path or raw text)
-/// or, when absent, from stdin. Writes the resulting MIME message to
-/// stdout. Parse errors are rendered as Ariadne diagnostics on stderr
-/// and the process exits successfully — same behavior as before.
 #[derive(Debug, Parser)]
 pub struct CompileCommand {
-    /// Path to an MML file, or a raw MML string.
-    #[arg(value_parser = parse_mml)]
-    pub mml: Option<MmlMessage>,
+    /// Path to an MML file, a raw MML string, or nothing when piped
+    /// on stdin.
+    #[command(flatten)]
+    pub mml: MessageArg,
 }
 
 impl CompileCommand {
     pub fn execute(self, _printer: &mut impl Printer) -> Result<()> {
-        let mml = self.mml.unwrap_or_else(format_stdin);
-
+        let mml = self.mml.parse()?;
         let compiler = MmlCompilerBuilder::new()
             .build(&mml)
             .context("cannot build MML compiler")?;
@@ -57,16 +49,6 @@ impl CompileCommand {
                 print!("{mime}");
                 Ok(())
             }
-        }
-    }
-}
-
-fn parse_mml(raw: &str) -> Result<MmlMessage, String> {
-    match path_parser(raw) {
-        Ok(path) => fs::read_to_string(path).map_err(|err| err.to_string()),
-        Err(err) => {
-            debug!("invalid path ({err}), processing arg as raw MML message");
-            Ok(format_str(raw))
         }
     }
 }

@@ -5,7 +5,7 @@ Client library and CLI to compose and read MIME messages using the [MIME Meta La
 This repository ships:
 
 - A **library** exposing two pipelines (MML→MIME compiler, MIME→MML interpreter) and a template builder for compose/reply/forward drafts.
-- A **CLI** wrapping the library, plus four editor-driven commands (`compose`, `reply`, `forward`, `read`) that bundle "template → `$EDITOR` → compile" with a post-edit choice prompt.
+- A **CLI** wrapping the library, plus three editor-driven commands (`compose`, `reply`, `forward`) that bundle "template → `$EDITOR` → compile" with a post-edit choice prompt, and `interpret` (aliased `read`) for the inverse MIME→MML flow.
 
 ## Table of contents
 
@@ -37,9 +37,9 @@ This repository ships:
   - Part include / exclude filters
   - HTML → text rendering via [`nanohtml2text`](https://crates.io/crates/nanohtml2text)
   - Attachment save-to-disk
-- **Editor-driven flow** (requires `cli` + `compiler`):
+  - `mml interpret` (aliased `mml read`): MIME on stdin, MML/text on stdout (himalaya `read-with` slot)
+- **Editor-driven flow** (requires `cli` + `compiler` + `interpreter`):
   - `mml compose` / `mml reply` / `mml forward`: open `$EDITOR`, compile on save, prompt to validate / re-edit / view / abort
-  - `mml read`: MIME on stdin, text on stdout (himalaya `read-with` slot)
 - **TOML configuration** with per-account identities and per-section defaults (`[compose]`, `[reply]`, `[forward]`, `[read]`)
 
 > [!TIP]

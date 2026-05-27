@@ -13,7 +13,7 @@
 #
 # The editor used by `compose` / `reply` / `forward` is whichever your shell
 # already exports: `$VISUAL` first, then `$EDITOR`. mml does not duplicate that
-# knob here — pick the editor in your shell rc file.
+# knob here; pick the editor in your shell rc file.
 # ================================================================================
 
 # Declare one section per identity. Pick one with `-a/--account <NAME>` or let
@@ -40,22 +40,22 @@ signature = """Test
 https://example.org"""
 
 # How to attach the signature.
-#   inlined  — append to the body (default)
-#   attached — ship as a `signature.txt` attachment
-#   hidden   — omit entirely
+#   inlined  : append to the body (default)
+#   attached : ship as a `signature.txt` attachment
+#   hidden   : omit entirely
 # compose.signature-style = "inlined"
 
 # Where to place the signature relative to the quoted thread.
-#   above-quote — between your reply and the quote
-#   below-quote — after the quote (default)
-#   attached    — `signature.txt` attachment
-#   hidden      — omit entirely
+#   above-quote : between your reply and the quote
+#   below-quote : after the quote (default)
+#   attached    : `signature.txt` attachment
+#   hidden      : omit entirely
 # reply.signature-style = "below-quote"
 
 # Where to place your reply relative to the quoted thread.
-#   top         — your reply, then the quote (default)
-#   bottom      — the quote, then your reply
-#   interleaved — cursor placed at the top of the quote
+#   top         : your reply, then the quote (default)
+#   bottom      : the quote, then your reply
+#   interleaved : cursor placed at the top of the quote
 # reply.posting-style = "top"
 
 # Line printed above the quoted thread. Empty by default.
@@ -66,8 +66,8 @@ https://example.org"""
 # forward.signature-style = "inlined"
 
 # How to attach the forwarded message.
-#   top      — quoted inline below your body (default)
-#   attached — shipped as a `message/rfc822` attachment
+#   top      : quoted inline below your body (default)
+#   attached : shipped as a `message/rfc822` attachment
 # forward.posting-style = "top"
 
 # Line printed above the forwarded message.

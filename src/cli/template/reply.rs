@@ -1,61 +1,63 @@
-use std::fs;
+//! `mml template reply`: builds a reply MML template from the
+//! source MIME message and the merged account + CLI args, then
+//! prints it on stdout without opening the editor or compiling. Use
+//! `mml reply` for the full edit and compile flow.
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use clap::Parser;
-use log::debug;
 use mail_parser::MessageParser;
-use pimalaya_cli::{clap::parsers::path_parser, printer::Printer};
+use pimalaya_cli::printer::Printer;
 
 use crate::{
     cli::{
         account::Account,
-        args::HeaderRawArgs,
-        stdin::{format_stdin, format_str},
+        args::{HeaderRawArgs, MessageArg, resolve_signature},
     },
     template::reply::{
         TemplateBuilderReply, TemplateReplyPostingStyle, TemplateReplySignatureStyle,
     },
 };
 
-type MimeMessage = String;
-
-/// Build a reply template from a source MIME message.
-///
-/// Identity and style fields default to the merged account (global
-/// + `[accounts.<name>]`); CLI flags override them.
+/// Build a new reply template, then print it on stdout.
 #[derive(Debug, Parser)]
 pub struct TemplateReplyCommand {
-    /// Source MIME message (file path or raw string). Defaults to
-    /// stdin.
-    #[arg(value_parser = parse_mime)]
-    pub mime: Option<MimeMessage>,
+    #[command(flatten)]
+    pub mime: MessageArg,
 
-    /// Include every recipient of the source message. CLI-only —
-    /// not configurable.
+    /// Reply to every recipient of the source message (Cc included).
+    /// CLI-only, no config equivalent.
     #[arg(long = "all", short = 'A')]
     pub reply_all: bool,
 
+    /// Email address used as the `From:` header. Overrides the
+    /// value from `[accounts.<name>]`.
     #[arg(long, short)]
     pub from: Option<String>,
-
+    /// Display name placed before the `From:` address.
     #[arg(long, short = 'F')]
     pub from_name: Option<String>,
 
+    /// Signature body, or path to a file containing it. Overrides
+    /// `[accounts.<name>].signature`.
     #[arg(long, short)]
     pub signature: Option<String>,
-
+    /// How to attach the signature (`above-quote`, `below-quote`,
+    /// `attached`, `hidden`).
     #[arg(long, short = 'S')]
     pub signature_style: Option<TemplateReplySignatureStyle>,
 
+    /// Where to place the reply relative to the quoted thread
+    /// (`top`, `bottom`, `interleaved`).
     #[arg(long, short = 'P')]
     pub posting_style: Option<TemplateReplyPostingStyle>,
-
+    /// Line printed above the quoted thread. Supports `\n` to insert
+    /// a newline.
     #[arg(long, short = 'Q')]
     pub quote_headline: Option<String>,
 
     #[command(flatten)]
     pub headers: HeaderRawArgs,
-
+    /// Pre-fill the body of the printed template.
     #[arg(short, long, default_value_t)]
     pub body: String,
 }
@@ -65,20 +67,21 @@ impl TemplateReplyCommand {
         let account = account
             .with_from(self.from)
             .with_from_name(self.from_name)
-            .with_signature(self.signature)
+            .with_signature(resolve_signature(self.signature))
             .with_reply_signature_style(self.signature_style)
             .with_reply_posting_style(self.posting_style)
-            .with_reply_quote_headline(self.quote_headline);
+            .with_reply_quote_headline(self.quote_headline.map(|q| q.replace("\\n", "\n")));
 
         let signature = account.signature();
 
         let Some(from) = account.from else {
-            bail!("missing `From` email from both config and args");
+            bail!("Missing `From` email from both config and args");
         };
 
-        let mime = self.mime.unwrap_or_else(format_stdin);
-        let Some(msg) = MessageParser::new().parse(mime.as_bytes()) else {
-            bail!("invalid or malformed MIME message");
+        let mime = self.mime.parse()?.into_bytes();
+
+        let Some(msg) = MessageParser::new().parse(&mime) else {
+            bail!("Invalid or malformed MIME message");
         };
 
         let tpl = TemplateBuilderReply {
@@ -95,15 +98,5 @@ impl TemplateReplyCommand {
         .build(&msg)?;
 
         printer.out(tpl)
-    }
-}
-
-fn parse_mime(raw: &str) -> Result<MimeMessage, String> {
-    match path_parser(raw) {
-        Ok(path) => fs::read_to_string(path).map_err(|err| err.to_string()),
-        Err(err) => {
-            debug!("invalid path ({err}), processing arg as raw MIME message");
-            Ok(format_str(raw))
-        }
     }
 }

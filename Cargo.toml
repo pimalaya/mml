@@ -3,7 +3,8 @@ name = "mml"
 description = "Rust implementation of the Emacs MIME message Meta Language (MML)"
 version = "1.0.0"
 authors = ["soywod <pimalaya.org@posteo.net>"]
-edition = "2021"
+rust-version = "1.88"
+edition = "2024"
 license = "MIT OR Apache-2.0"
 categories = ["command-line-utilities", "email", "text-processing"]
 keywords = ["email", "mime", "message", "mml", "emacs"]
@@ -17,7 +18,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = ["compiler", "interpreter"]
-cli = ["interpreter", "dep:anyhow", "dep:ariadne", "dep:clap", "dep:edit", "dep:pimalaya-cli", "dep:pimalaya-config", "dep:serde"]
+cli = ["dep:anyhow", "dep:ariadne", "dep:clap", "dep:edit", "dep:pimalaya-cli", "dep:pimalaya-config", "dep:serde"]
 compiler = ["dep:chumsky", "dep:shellexpand", "dep:tree_magic_mini"]
 interpreter = ["dep:nanohtml2text"]
 

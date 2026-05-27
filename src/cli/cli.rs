@@ -18,15 +18,13 @@ use pimalaya_cli::{
 };
 use pimalaya_config::toml::TomlConfig;
 
+#[cfg(feature = "compiler")]
+use crate::cli::compile::CompileCommand;
 use crate::cli::{account::Account, config::Config};
 #[cfg(all(feature = "compiler", feature = "interpreter"))]
 use crate::cli::{compose::ComposeCommand, forward::ForwardCommand, reply::ReplyCommand};
 #[cfg(feature = "interpreter")]
-use crate::cli::{read::ReadCommand, template::TemplateCommand};
-#[cfg(feature = "compiler")]
-use crate::compiler::cli::CompileCommand;
-#[cfg(feature = "interpreter")]
-use crate::interpreter::cli::InterpretCommand;
+use crate::cli::{interpret::InterpretCommand, template::TemplateCommand};
 
 /// Root CLI parser.
 #[derive(Parser, Debug)]
@@ -34,9 +32,9 @@ use crate::interpreter::cli::InterpretCommand;
 #[command(author, version, about)]
 #[command(long_version = long_version!())]
 #[command(propagate_version = true, infer_subcommands = true)]
-pub struct MmlCli {
+pub struct Cli {
     #[command(subcommand)]
-    pub command: MmlCommand,
+    pub command: Command,
 
     /// Override the default configuration file path.
     ///
@@ -56,7 +54,7 @@ pub struct MmlCli {
 }
 
 #[derive(Subcommand, Debug)]
-pub enum MmlCommand {
+pub enum Command {
     #[cfg(feature = "interpreter")]
     #[command(subcommand)]
     #[clap(visible_alias = "tpl")]
@@ -65,6 +63,7 @@ pub enum MmlCommand {
     #[cfg(feature = "compiler")]
     Compile(CompileCommand),
     #[cfg(feature = "interpreter")]
+    #[command(visible_alias = "read")]
     Interpret(InterpretCommand),
 
     #[cfg(all(feature = "compiler", feature = "interpreter"))]
@@ -73,14 +72,12 @@ pub enum MmlCommand {
     Reply(ReplyCommand),
     #[cfg(all(feature = "compiler", feature = "interpreter"))]
     Forward(ForwardCommand),
-    #[cfg(feature = "interpreter")]
-    Read(ReadCommand),
 
     Completions(CompletionCommand),
     Manuals(ManualCommand),
 }
 
-impl MmlCommand {
+impl Command {
     pub fn execute(
         self,
         printer: &mut impl Printer,
@@ -114,11 +111,9 @@ impl MmlCommand {
             Self::Reply(cmd) => cmd.execute(printer, account()?),
             #[cfg(all(feature = "compiler", feature = "interpreter"))]
             Self::Forward(cmd) => cmd.execute(printer, account()?),
-            #[cfg(feature = "interpreter")]
-            Self::Read(cmd) => cmd.execute(printer, account()?),
 
-            Self::Completions(cmd) => cmd.execute(printer, MmlCli::command()),
-            Self::Manuals(cmd) => cmd.execute(printer, MmlCli::command()),
+            Self::Completions(cmd) => cmd.execute(printer, Cli::command()),
+            Self::Manuals(cmd) => cmd.execute(printer, Cli::command()),
         }
     }
 }

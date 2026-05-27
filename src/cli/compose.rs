@@ -1,47 +1,46 @@
-//! `mml compose` — editor-driven new-message composer. Builds a
-//! draft template from the merged account + CLI args, opens
-//! [`crate::cli::editor::edit_loop`] on it, then writes the compiled
-//! MIME bytes to stdout. Designed to plug into himalaya v2 as
-//! `[message.composer.mml] command = "mml compose"`.
+//! `mml compose`: editor-driven new-message composer. Builds a
+//! draft template from the merged account and CLI args, opens
+//! [`crate::cli::utils::editor::edit_loop`] on it, then writes the
+//! compiled MIME bytes to stdout. Designed to plug into himalaya v2
+//! as `[message.composer.mml] command = "mml compose"`.
 
-use std::io::{stdout, Write};
+use std::io::{Write, stdout};
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use clap::Parser;
 use pimalaya_cli::printer::Printer;
 
 use crate::{
-    cli::{account::Account, args::HeaderRawArgs, editor::edit_loop},
+    cli::{
+        account::Account,
+        args::{HeaderRawArgs, resolve_signature},
+        utils::editor::edit_loop,
+    },
     template::compose::{TemplateBuilderCompose, TemplateComposeSignatureStyle},
 };
 
-/// Compose a new message: build the template, drive `$EDITOR`,
-/// compile MML → MIME, then write the MIME bytes to stdout.
-///
-/// Designed to be plugged into himalaya as
-/// `[message.composer.mml] command = "mml compose"`.
+/// Compose a new message interactively, using $EDITOR.
 #[derive(Debug, Parser)]
 pub struct ComposeCommand {
     /// Email address used as the `From:` header. Overrides the
     /// value from `[accounts.<name>]`.
     #[arg(long, short)]
     pub from: Option<String>,
-
-    /// Display name placed before the address.
+    /// Display name placed before the `From:` address.
     #[arg(long, short = 'F')]
     pub from_name: Option<String>,
 
-    /// Raw signature body (overrides config).
+    /// Signature body, or path to a file containing it. Overrides
+    /// `[accounts.<name>].signature`.
     #[arg(long, short)]
     pub signature: Option<String>,
-
-    /// How to attach the signature.
+    /// How to attach the signature (`inlined`, `attached`,
+    /// `hidden`).
     #[arg(long, short = 'S')]
     pub signature_style: Option<TemplateComposeSignatureStyle>,
 
     #[command(flatten)]
     pub headers: HeaderRawArgs,
-
     /// Pre-fill the body before opening the editor.
     #[arg(long, short, default_value_t)]
     pub body: String,
@@ -52,7 +51,7 @@ impl ComposeCommand {
         let account = account
             .with_from(self.from)
             .with_from_name(self.from_name)
-            .with_signature(self.signature)
+            .with_signature(resolve_signature(self.signature))
             .with_compose_signature_style(self.signature_style);
 
         let signature = account.signature();

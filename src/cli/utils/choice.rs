@@ -29,8 +29,8 @@ impl fmt::Display for PostEditChoice {
     }
 }
 
-/// Show the post-edit prompt. `compile_ok` hides `Validate` and
-/// `ViewMime` when the current buffer doesn't compile — the user
+/// Show the post-edit prompt. `compile_ok` hides `Done` and
+/// `ViewMime` when the current buffer doesn't compile, so the user
 /// has to fix it first.
 pub fn post_edit(compile_ok: bool) -> Result<PostEditChoice> {
     let choices = if compile_ok {

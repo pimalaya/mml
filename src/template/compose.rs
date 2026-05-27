@@ -1,9 +1,9 @@
-//! Compose template builder — see [`TemplateBuilderCompose`] for
+//! Compose template builder: see [`TemplateBuilderCompose`] for
 //! building a draft template for a brand-new message (no source).
 
 use mail_builder::{
-    headers::{address::Address, raw::Raw},
     MessageBuilder,
+    headers::{address::Address, raw::Raw},
 };
 
 use crate::{
@@ -24,13 +24,10 @@ pub struct TemplateBuilderCompose {
 
 impl TemplateBuilderCompose {
     pub fn build(self) -> Result<Template> {
-        let interpreter = MimeInterpreterBuilder::new().with_show_only_headers([
-            "From",
-            "To",
-            "In-Reply-To",
-            "Cc",
-            "Subject",
-        ]);
+        let interpreter = MimeInterpreterBuilder::new()
+            .with_show_only_headers(["From", "To", "In-Reply-To", "Cc", "Subject"])
+            .with_show_additional_headers(self.headers.iter().map(|(h, _)| h))
+            .with_save_attachments(true);
 
         let mut msg = MessageBuilder::default();
         let mut cursor = TemplateCursor::default();
@@ -70,7 +67,7 @@ impl TemplateBuilderCompose {
         });
 
         if self.signature_style.is_attached() && !self.signature.is_empty() {
-            msg = msg.attachment("text/plain", "signature.txt", self.signature)
+            msg = msg.attachment("application/octet-stream", "signature", self.signature)
         }
 
         let content = interpreter.build().from_msg_builder(msg)?;

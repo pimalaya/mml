@@ -5,8 +5,8 @@ use std::{ffi::OsStr, fs, ops::Deref, path::PathBuf};
 
 use log::debug;
 use mail_builder::{
-    mime::{BodyPart, MimePart},
     MessageBuilder,
+    mime::{BodyPart, MimePart},
 };
 
 use crate::{

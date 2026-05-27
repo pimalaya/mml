@@ -54,8 +54,8 @@ pub(crate) fn encoding_8bit<'a>() -> impl Parser<'a, &'a str, &'a str, ParserErr
     maybe_quoted_const_val(ENCODING_8BIT).labelled(ENCODING_8BIT)
 }
 
-pub(crate) fn encoding_quoted_printable<'a>(
-) -> impl Parser<'a, &'a str, &'a str, ParserError<'a>> + Clone {
+pub(crate) fn encoding_quoted_printable<'a>()
+-> impl Parser<'a, &'a str, &'a str, ParserError<'a>> + Clone {
     maybe_quoted_const_val(ENCODING_QUOTED_PRINTABLE).labelled(ENCODING_QUOTED_PRINTABLE)
 }
 
