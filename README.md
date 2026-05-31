@@ -1,11 +1,11 @@
-# MML [![Documentation](https://img.shields.io/docsrs/mml?style=flat&logo=docs.rs&logoColor=white)](https://docs.rs/mml/latest/mml) [![Matrix](https://img.shields.io/badge/chat-%23pimalaya-blue?style=flat&logo=matrix&logoColor=white)](https://matrix.to/#/#pimalaya:matrix.org) [![Mastodon](https://img.shields.io/badge/news-%40pimalaya-blue?style=flat&logo=mastodon&logoColor=white)](https://fosstodon.org/@pimalaya)
+# 📝 MML [![Documentation](https://img.shields.io/docsrs/mml?style=flat&logo=docs.rs&logoColor=white)](https://docs.rs/mml/latest/mml) [![Matrix](https://img.shields.io/badge/chat-%23pimalaya-blue?style=flat&logo=matrix&logoColor=white)](https://matrix.to/#/#pimalaya:matrix.org) [![Mastodon](https://img.shields.io/badge/news-%40pimalaya-blue?style=flat&logo=mastodon&logoColor=white)](https://fosstodon.org/@pimalaya)
 
 CLI and lib for the Emacs MIME message Meta Language ([MML](https://www.gnu.org/software/emacs/manual/html_node/emacs-mime/MML-Definition.html)), written in Rust.
 
-This repository ships:
+This repository ships two layers:
 
-- A **library** exposing two pipelines (MML→MIME compiler, MIME→MML interpreter) and a template builder for compose/reply/forward drafts.
-- A **CLI** wrapping the library, plus three editor-driven commands (`compose`, `reply`, `forward`) that bundle "template → `$EDITOR` → compile" with a post-edit choice prompt, and `interpret` (aliased `read`) for the inverse MIME→MML flow.
+- Low-level **library** exposing two pipelines (MML→MIME compiler, MIME→MML interpreter) and a template builder for compose/reply/forward drafts.
+- High-level **CLI** wrapping the library, plus editor-driven `compose` / `reply` / `forward` commands bundling "template → `$EDITOR` → compile → validate/re-edit/view/abort", and `interpret` (aliased `read`) for the inverse MIME→MML flow.
 
 ## Table of contents
 
