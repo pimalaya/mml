@@ -1,6 +1,6 @@
 [package]
-name = "mml"
-description = "Rust implementation of the Emacs MIME message Meta Language (MML)"
+name = "mime-meta-language"
+description = "CLI and lib for the Emacs MIME message Meta Language (MML)"
 version = "1.1.0"
 authors = ["soywod <pimalaya.org@posteo.net>"]
 rust-version = "1.88"
@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 categories = ["command-line-utilities", "email", "text-processing"]
 keywords = ["email", "mime", "message", "mml", "emacs"]
 homepage = "https://pimalaya.org"
-documentation = "https://docs.rs/mml/latest/mml"
+documentation = "https://docs.rs/mime-meta-language/latest/mml"
 repository = "https://github.com/pimalaya/mml"
 
 [package.metadata.docs.rs]
@@ -32,6 +32,10 @@ panic = "abort"
 name = "mml"
 path = "src/main.rs"
 required-features = ["cli"]
+
+[lib]
+name = "mml"
+path = "src/lib.rs"
 
 [build-dependencies]
 pimalaya-cli = { version = "0.0.1", default-features = false, features = ["build"], optional = true }

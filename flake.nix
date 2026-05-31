@@ -1,9 +1,10 @@
 {
-  description = "CLI to compose and read MIME messages using the MIME Meta Language markup, written in Rust";
+  description = "CLI and lib for the Emacs MIME message Meta Language (MML), written in Rust";
 
   inputs = {
     nixpkgs = {
-      url = "github:nixos/nixpkgs/nixos-25.11";
+      # until crates.io fix fully backported
+      url = "github:nixos/nixpkgs?tag=25.11&rev=c767db50e209f33ffce3c18165b36101079d367d";
     };
     fenix = {
       url = "github:nix-community/fenix/monthly";

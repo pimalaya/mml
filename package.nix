@@ -62,11 +62,14 @@ rustPlatform.buildRustPackage {
     '';
 
   meta = {
-    description = "Rust implementation of the Emacs MIME message Meta Language (MML)";
+    description = "CLI and lib for the Emacs MIME message Meta Language (MML), written in Rust";
     mainProgram = "mml";
     homepage = "https://github.com/pimalaya/mml";
-    changelog = "https://github.com/pimalaya/mml/blob/v${version}/CHANGELOG.md";
-    license = lib.licenses.mit;
+    changelog = "https://github.com/pimalaya/mml/blob/master/CHANGELOG.md";
+    license = [
+      lib.licenses.mit
+      lib.licenses.asl20
+    ];
     maintainers = with lib.maintainers; [ soywod ];
   };
 }
