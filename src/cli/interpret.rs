@@ -1,8 +1,9 @@
 //! `mml interpret`: MIME to MML pipeline. Reads a MIME message from
 //! the positional argument or stdin, applies the merged `[read]`
 //! defaults (overridable per flag), and writes the rendered MML on
-//! stdout. Exposed under the visible alias `mml read` so himalaya
-//! v2's `[message.reader.mml]` slot can spawn it as a reader.
+//! stdout. Exposed under the visible alias `mml read` so callers can
+//! pipe it directly from `himalaya messages read --raw <id>` or any
+//! other MIME source.
 
 use std::path::PathBuf;
 
