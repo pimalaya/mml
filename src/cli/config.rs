@@ -63,7 +63,7 @@ impl TomlConfig for Config {
     type Account = AccountConfig;
 
     fn project_name() -> &'static str {
-        env!("CARGO_PKG_NAME")
+        "mml"
     }
 
     fn take_named_account(&mut self, name: &str) -> Option<(String, Self::Account)> {
