@@ -1,10 +1,16 @@
 //! `mml forward`: editor-driven forward composer. Same shape as
 //! [`crate::cli::reply`], built around
-//! [`crate::template::forward::TemplateBuilderForward`].
+//! [`crate::template::forward::TemplateBuilderForward`]. Optional
+//! leading positional output path, source MIME after `--` (or via
+//! stdin).
 
-use std::io::{Write, stdout};
+use std::{
+    fs,
+    io::{Write, stdout},
+    path::PathBuf,
+};
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 use mail_parser::MessageParser;
 use pimalaya_cli::printer::Printer;
@@ -23,9 +29,6 @@ use crate::{
 /// Forward the given message interactively, using $EDITOR.
 #[derive(Debug, Parser)]
 pub struct ForwardCommand {
-    #[command(flatten)]
-    pub mime: MessageArg,
-
     /// Email address used as the `From:` header. Overrides the
     /// value from `[accounts.<name>]`.
     #[arg(long, short)]
@@ -56,6 +59,16 @@ pub struct ForwardCommand {
     /// Pre-fill the body before opening the editor.
     #[arg(long, short, default_value_t)]
     pub body: String,
+
+    /// Optional file path to write the compiled MIME message to.
+    /// When omitted, the MIME bytes are written to stdout. See
+    /// [`crate::cli::compose::ComposeCommand::output`] for the
+    /// rationale.
+    #[arg(value_name = "PATH")]
+    pub output: Option<PathBuf>,
+
+    #[command(flatten)]
+    pub mime: MessageArg,
 }
 
 impl ForwardCommand {
@@ -92,11 +105,12 @@ impl ForwardCommand {
         }
         .build(&msg)?;
 
-        match edit_loop(tpl)? {
-            Some(mime) => {
-                stdout().write_all(&mime)?;
-                Ok(())
-            }
+        match edit_loop(tpl, self.output.is_some())? {
+            Some(mime) => match self.output {
+                Some(path) => fs::write(&path, &mime)
+                    .with_context(|| format!("cannot write MIME to {}", path.display())),
+                None => Ok(stdout().write_all(&mime)?),
+            },
             None => bail!("aborted by user"),
         }
     }

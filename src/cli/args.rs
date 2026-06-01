@@ -35,7 +35,7 @@ fn raw_header_parser(raw_header: &str) -> Result<(String, String), String> {
 pub struct MessageArg {
     /// Can be a path to a file, raw message contents or nothing if piped via
     /// standard input.
-    #[arg(name = "message-raw", value_name = "MESSAGE", trailing_var_arg = true)]
+    #[arg(name = "message-raw", value_name = "MESSAGE", raw = true)]
     pub raw: Vec<String>,
 }
 

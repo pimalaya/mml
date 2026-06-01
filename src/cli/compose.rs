@@ -1,12 +1,19 @@
 //! `mml compose`: editor-driven new-message composer. Builds a
 //! draft template from the merged account and CLI args, opens
 //! [`crate::cli::utils::editor::edit_loop`] on it, then writes the
-//! compiled MIME bytes to stdout. Designed to plug into himalaya v2
-//! as `[message.composer.mml] command = "mml compose"`.
+//! compiled MIME bytes either to the optional output path (when
+//! given) or to stdout. The path-arg form is what parent pipelines
+//! (e.g. `himalaya messages send <path>`) and process-substitution
+//! (`mml compose >(himalaya messages send)`) rely on to keep
+//! `$EDITOR`'s stdout connected to the terminal.
 
-use std::io::{Write, stdout};
+use std::{
+    fs,
+    io::{Write, stdout},
+    path::PathBuf,
+};
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 use pimalaya_cli::printer::Printer;
 
@@ -44,6 +51,14 @@ pub struct ComposeCommand {
     /// Pre-fill the body before opening the editor.
     #[arg(long, short, default_value_t)]
     pub body: String,
+
+    /// Optional file path to write the compiled MIME message to.
+    /// When omitted, the MIME bytes are written to stdout. Passing a
+    /// path lets the caller pipe mml into a consumer that opens an
+    /// editor (which inherits mml's terminal stdout) without the
+    /// stdout pipe corrupting the editor's UI.
+    #[arg(value_name = "OUTPUT")]
+    pub output: Option<PathBuf>,
 }
 
 impl ComposeCommand {
@@ -70,11 +85,12 @@ impl ComposeCommand {
         }
         .build()?;
 
-        match edit_loop(tpl)? {
-            Some(mime) => {
-                stdout().write_all(&mime)?;
-                Ok(())
-            }
+        match edit_loop(tpl, self.output.is_some())? {
+            Some(mime) => match self.output {
+                Some(path) => fs::write(&path, &mime)
+                    .with_context(|| format!("cannot write MIME to {}", path.display())),
+                None => Ok(stdout().write_all(&mime)?),
+            },
             None => bail!("aborted by user"),
         }
     }

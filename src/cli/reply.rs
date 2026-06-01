@@ -1,12 +1,19 @@
 //! `mml reply`: editor-driven reply composer. Reads the source MIME
-//! message on stdin, builds a reply template via
-//! [`crate::template::reply::TemplateBuilderReply`], runs the
-//! [`crate::cli::utils::editor::edit_loop`], and emits the compiled
-//! MIME bytes on stdout.
+//! message on stdin (or from a path/inline value), builds a reply
+//! template via [`crate::template::reply::TemplateBuilderReply`],
+//! runs the [`crate::cli::utils::editor::edit_loop`], and emits the
+//! compiled MIME bytes either to the optional output path or to
+//! stdout. Source MIME after `--` is `MessageArg`'s
+//! trailing-var-arg slot; the leading positional is the output
+//! path.
 
-use std::io::{Write, stdout};
+use std::{
+    fs,
+    io::{Write, stdout},
+    path::PathBuf,
+};
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 use mail_parser::MessageParser;
 use pimalaya_cli::printer::Printer;
@@ -25,9 +32,6 @@ use crate::{
 /// Reply to the given message interactively, using $EDITOR.
 #[derive(Debug, Parser)]
 pub struct ReplyCommand {
-    #[command(flatten)]
-    pub mime: MessageArg,
-
     /// Reply to every recipient of the source message (Cc included).
     /// CLI-only, no config equivalent.
     #[arg(long = "all", short = 'A')]
@@ -64,6 +68,16 @@ pub struct ReplyCommand {
     /// Pre-fill the body before opening the editor.
     #[arg(long, short, default_value_t)]
     pub body: String,
+
+    /// Optional file path to write the compiled MIME message to.
+    /// When omitted, the MIME bytes are written to stdout. See
+    /// [`crate::cli::compose::ComposeCommand::output`] for the
+    /// rationale.
+    #[arg(value_name = "PATH")]
+    pub output: Option<PathBuf>,
+
+    #[command(flatten)]
+    pub mime: MessageArg,
 }
 
 impl ReplyCommand {
@@ -101,11 +115,12 @@ impl ReplyCommand {
         }
         .build(&msg)?;
 
-        match edit_loop(tpl)? {
-            Some(mime) => {
-                stdout().write_all(&mime)?;
-                Ok(())
-            }
+        match edit_loop(tpl, self.output.is_some())? {
+            Some(mime) => match self.output {
+                Some(path) => fs::write(&path, &mime)
+                    .with_context(|| format!("cannot write MIME to {}", path.display())),
+                None => Ok(stdout().write_all(&mime)?),
+            },
             None => bail!("aborted by user"),
         }
     }

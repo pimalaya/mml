@@ -7,9 +7,10 @@
 //! The flow is: open the editor on the template, try to compile MML
 //! into MIME, surface compile errors via Ariadne on stderr, then
 //! prompt the user with [`crate::cli::utils::choice::post_edit`]
-//! (done / edit again / view MML / view MIME / abort). The loop only
-//! exits on `Done` (returns `Some(mime)`) or `Abort` (returns
-//! `None`).
+//! (save / edit again / view MML / view MIME / abort). The save
+//! choice label tracks the caller's output destination (file vs
+//! stdout). The loop only exits on a save choice (returns
+//! `Some(mime)`) or `Abort` (returns `None`).
 
 use std::io::{Write, stderr};
 
@@ -26,8 +27,11 @@ use crate::{
 
 /// Compose loop: edit → compile → prompt → loop.
 ///
-/// Returns `Ok(Some(mime))` on `Validate`, `Ok(None)` on `Abort`.
-pub fn edit_loop(initial: Template) -> Result<Option<Vec<u8>>> {
+/// `has_output_path` toggles the save-choice label between
+/// "Save to file" and "Save to stdout"; the actual write happens at
+/// the caller. Returns `Ok(Some(mime))` when the user saves,
+/// `Ok(None)` on abort.
+pub fn edit_loop(initial: Template, has_output_path: bool) -> Result<Option<Vec<u8>>> {
     let mut buffer = initial.content;
 
     loop {
@@ -44,9 +48,9 @@ pub fn edit_loop(initial: Template) -> Result<Option<Vec<u8>>> {
         };
 
         loop {
-            let choice = post_edit(compiled.is_some())?;
+            let choice = post_edit(compiled.is_some(), has_output_path)?;
             match choice {
-                PostEditChoice::Done => {
+                PostEditChoice::SaveToFile | PostEditChoice::SaveToStdout => {
                     if let Some(mime) = compiled {
                         return Ok(Some(mime));
                     }

@@ -38,7 +38,7 @@ This repository ships two layers:
   - Part include / exclude filters
   - HTML → text rendering via [`nanohtml2text`](https://crates.io/crates/nanohtml2text)
   - Attachment save-to-disk
-  - `mml interpret` (aliased `mml read`): MIME on stdin, MML/text on stdout (himalaya `read-with` slot)
+  - `mml interpret` (aliased `mml read`): MIME on stdin, MML/text on stdout
 - **Editor-driven flow** (requires `cli` + `compiler` + `interpreter`):
   - `mml compose` / `mml reply` / `mml forward`: open `$EDITOR`, compile on save, prompt to validate / re-edit / view / abort
 - **TOML configuration** with per-account identities and per-section defaults (`[compose]`, `[reply]`, `[forward]`, `[read]`)
@@ -170,20 +170,32 @@ Interpret MIME back to MML/text:
 mml interpret < message.eml
 ```
 
-Open the editor on a fresh compose draft, then emit the compiled MIME message on stdout:
+Open the editor on a fresh compose draft, then emit the compiled MIME message on stdout, or to a file when a path is given:
 
 ```sh
 mml compose --from me@example.org
+mml compose --from me@example.org /tmp/draft.eml
 ```
 
-Reply / forward from a piped MIME message:
+Reply / forward read the source MIME on stdin (or from a path after `--`) and route the result the same way; the leading positional is the optional output path:
 
 ```sh
 cat message.eml | mml reply --all
-cat message.eml | mml forward
+cat message.eml | mml forward /tmp/draft.eml
+mml reply --all /tmp/draft.eml -- /tmp/source.eml
 ```
 
-Read (MIME → text) for himalaya's `read-with`:
+Pipelines into himalaya v2:
+
+```sh
+mml compose --from me@example.org /tmp/draft.eml && himalaya messages send /tmp/draft.eml
+mml compose --from me@example.org >(himalaya messages send)
+himalaya messages read 42 | mml reply >(himalaya messages send)
+```
+
+The path-arg or process-substitution forms keep mml's stdout connected to the terminal, so the editor mml spawns sees a real tty. The bare-pipe form `mml compose | himalaya messages send` hangs the editor because mml's stdout (and therefore the editor's inherited stdout) is the pipe to himalaya.
+
+Read (MIME → text), useful for piping through `less` or chaining with himalaya:
 
 ```sh
 cat message.eml | mml read --exclude-header Received,DKIM-Signature
@@ -197,16 +209,11 @@ mml template reply --all < message.eml
 mml template forward < message.eml
 ```
 
-Plug `mml` into [himalaya](https://github.com/pimalaya/himalaya) v2:
+Plug `mml` into [himalaya](https://github.com/pimalaya/himalaya) v2 by wiring shell pipelines or aliases against the `messages send` / `messages add` / `messages read` primitives. A typical `.bashrc` snippet:
 
-```toml
-[message.composer.mml]
-command = "mml compose"
-default = true
-
-[message.reader.mml]
-command = "mml read"
-default = true
+```sh
+hsend() { local f=$(mktemp --suffix=.eml); mml compose "$f" && himalaya messages send "$f"; rm -f "$f"; }
+hreply() { himalaya messages read "$1" | mml reply >(himalaya messages send); }
 ```
 
 ## FAQ

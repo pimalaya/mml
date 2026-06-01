@@ -19,7 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Each opens `$VISUAL` / `$EDITOR` on a pre-filled MML template, compiles the buffer on save, then prompts to validate, re-edit, view, or abort.
 
-- Added a `read` visible alias on the `interpret` subcommand so himalaya v2's `[message.reader.mml]` slot can spawn `mml read` against a piped MIME message.
+  Each subcommand also takes an optional leading positional `<OUTPUT>` path. When given, the compiled MIME bytes are written to that file instead of stdout, keeping mml's stdout connected to the terminal so the spawned editor sees a real tty. This is the form expected by shell pipelines into a consumer that itself opens an editor (`mml compose /tmp/x.eml && himalaya messages send /tmp/x.eml`) and by bash/zsh process substitution (`mml compose >(himalaya messages send)`). For `reply` / `forward`, the source MIME is the trailing positional (after `--`) or stdin.
+
+- Added a `read` visible alias on the `interpret` subcommand for the inverse MIME→text flow.
 
 - Added TOML configuration via pimalaya-config.
 

@@ -10,7 +10,8 @@ use pimalaya_cli::prompt;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PostEditChoice {
-    Done,
+    SaveToFile,
+    SaveToStdout,
     ViewMime,
     ViewTemplate,
     Edit,
@@ -20,7 +21,8 @@ pub enum PostEditChoice {
 impl fmt::Display for PostEditChoice {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Done => write!(f, "Compile to MIME message"),
+            Self::SaveToFile => write!(f, "Save MIME message to file"),
+            Self::SaveToStdout => write!(f, "Save MIME message to stdout"),
             Self::ViewMime => write!(f, "Preview MIME message"),
             Self::ViewTemplate => write!(f, "Preview MML template"),
             Self::Edit => write!(f, "Edit MML again"),
@@ -29,13 +31,21 @@ impl fmt::Display for PostEditChoice {
     }
 }
 
-/// Show the post-edit prompt. `compile_ok` hides `Done` and
-/// `ViewMime` when the current buffer doesn't compile, so the user
-/// has to fix it first.
-pub fn post_edit(compile_ok: bool) -> Result<PostEditChoice> {
+/// Show the post-edit prompt. `compile_ok` hides the save and
+/// `ViewMime` choices when the current buffer doesn't compile, so
+/// the user has to fix it first. `has_output_path` toggles the save
+/// label between "Save to file" (when an output path was passed on
+/// the command line) and "Save to stdout".
+pub fn post_edit(compile_ok: bool, has_output_path: bool) -> Result<PostEditChoice> {
+    let save = if has_output_path {
+        PostEditChoice::SaveToFile
+    } else {
+        PostEditChoice::SaveToStdout
+    };
+
     let choices = if compile_ok {
         vec![
-            PostEditChoice::Done,
+            save,
             PostEditChoice::ViewMime,
             PostEditChoice::ViewTemplate,
             PostEditChoice::Edit,
