@@ -1,4 +1,4 @@
-# 📝 MML [![Documentation](https://img.shields.io/docsrs/mml?style=flat&logo=docs.rs&logoColor=white)](https://docs.rs/mml/latest/mml) [![Matrix](https://img.shields.io/badge/chat-%23pimalaya-blue?style=flat&logo=matrix&logoColor=white)](https://matrix.to/#/#pimalaya:matrix.org) [![Mastodon](https://img.shields.io/badge/news-%40pimalaya-blue?style=flat&logo=mastodon&logoColor=white)](https://fosstodon.org/@pimalaya)
+# MML [![Documentation](https://img.shields.io/docsrs/mime-meta-language?style=flat&logo=docs.rs&logoColor=white)](https://docs.rs/mime-meta-language/latest/mml) [![Matrix](https://img.shields.io/badge/chat-%23pimalaya-blue?style=flat&logo=matrix&logoColor=white)](https://matrix.to/#/#pimalaya:matrix.org) [![Mastodon](https://img.shields.io/badge/news-%40pimalaya-blue?style=flat&logo=mastodon&logoColor=white)](https://fosstodon.org/@pimalaya)
 
 CLI and lib for the Emacs MIME message Meta Language ([MML](https://www.gnu.org/software/emacs/manual/html_node/emacs-mime/MML-Definition.html)), written in Rust.
 
@@ -72,7 +72,7 @@ For a more up-to-date version, check out the [pre-releases](https://github.com/p
 ### Cargo
 
 ```sh
-cargo install mml --locked
+cargo install mime-meta-language --locked --features cli
 ```
 
 You can also use the git repository for a more up-to-date (but less stable) version:
@@ -85,7 +85,7 @@ To use `mml` as a library, add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-mml = { version = "1.0", default-features = false, features = ["compiler", "interpreter"] }
+mime-meta-language = { version = "1.1", default-features = false, features = ["compiler", "interpreter"] }
 ```
 
 Drop `cli` (and pick only `compiler` and/or `interpreter`) for a slim library build with no clap, no ariadne, no editor integration.

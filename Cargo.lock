@@ -94,9 +94,9 @@ dependencies = [
 
 [[package]]
 name = "bitflags"
-version = "2.11.1"
+version = "2.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4512299f36f043ab09a583e57bceb5a5aab7a73db1805848e8fef3c9e8c78b3"
+checksum = "b4388bee8683e3d04af747c73422af53102d2bd24d9eadb6cbc100baef4b43f8"
 
 [[package]]
 name = "cc"
@@ -612,9 +612,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.30"
+version = "0.4.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "616ec5685824bcc94416c6d4a7a446eea774a31efd7062c8480ba6fd06d7a6e5"
+checksum = "953f07c43838f8e6f9758cab68bf5bed85465e7587ebe0b823f1bcd81978ad3a"
 
 [[package]]
 name = "mail-builder"
@@ -756,7 +756,8 @@ dependencies = [
 [[package]]
 name = "pimalaya-cli"
 version = "0.0.1"
-source = "git+https://github.com/pimalaya/cli#8ee488f8701b9e4a5bb29dbcbc051b399b78e5c6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7f9f9d7170b712b8b82808332db0ee0bbce5ad0b65a53e770db3b6f3ba3a94b"
 dependencies = [
  "anyhow",
  "clap",
@@ -777,7 +778,8 @@ dependencies = [
 [[package]]
 name = "pimalaya-config"
 version = "0.0.1"
-source = "git+https://github.com/pimalaya/config#c10cd14039de1ef31c56c5efa3463a20b38d2c57"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e3ca29b69c4725d68e5fda404ff0ef18e8cc56485f46ee9baf81476b47f6088"
 dependencies = [
  "anyhow",
  "dirs",
@@ -1211,9 +1213,9 @@ checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
 name = "unicode-segmentation"
-version = "1.13.2"
+version = "1.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9629274872b2bfaf8d66f5f15725007f635594914870f65218920345aa11aa8c"
+checksum = "c6f5d3c3b1bf09027a88a6bc961fc00497d651009560b5463668dc81b0fa87a8"
 
 [[package]]
 name = "unicode-width"

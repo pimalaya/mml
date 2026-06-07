@@ -62,11 +62,3 @@ serde = { version = "1", features = ["derive"], optional = true }
 shellexpand = { version = "3.1", optional = true }
 thiserror = "2"
 tree_magic_mini = { version = "3", optional = true }
-
-# [patch.crates-io]
-# pimalaya-cli.path = "../cli"
-# pimalaya-config.path = "../config"
-
-[patch.crates-io]
-pimalaya-cli.git = "https://github.com/pimalaya/cli"
-pimalaya-config.git = "https://github.com/pimalaya/config"
