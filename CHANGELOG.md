@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-06-07
+
+### Fixed
+
+- Fixed CI release build.
+
 ## [1.1.0] - 2026-06-07
 
 ### Added
@@ -119,7 +125,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `compile` and `interpret` feature from [mml-lib](https://crates.io/crates/mml-lib).
 
-[Unreleased]: https://github.com/pimalaya/mml/compare/v1.1.0...master
+[Unreleased]: https://github.com/pimalaya/mml/compare/v1.1.1...master
+[1.1.1]: https://github.com/pimalaya/mml/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/pimalaya/mml/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/pimalaya/mml/compare/v0.3.0...v1.0.0
 [0.3.0]: https://github.com/pimalaya/mml/compare/v0.2.1...v0.3.0
