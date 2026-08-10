@@ -10,7 +10,7 @@ use pimalaya_cli::printer::Printer;
 use crate::{
     cli::{
         account::Account,
-        args::{HeaderRawArgs, OutputArg},
+        args::{HeaderRawArgs, IdentityArgs, OutputArg},
         compose::ComposeCommand,
     },
     template::compose::MmlTemplateComposeSignatureStyle,
@@ -29,18 +29,8 @@ pub struct MailtoCommand {
     #[arg(value_name = "URI")]
     pub uri: String,
 
-    /// Email address used as the `From:` header. Overrides the
-    /// value from `[accounts.<name>]`.
-    #[arg(long, short)]
-    pub from: Option<String>,
-    /// Display name placed before the `From:` address.
-    #[arg(long, short = 'F')]
-    pub from_name: Option<String>,
-
-    /// Signature body, or path to a file containing it. Overrides
-    /// `[accounts.<name>].signature`.
-    #[arg(long, short)]
-    pub signature: Option<String>,
+    #[command(flatten)]
+    pub identity: IdentityArgs,
     /// How to attach the signature (`inlined`, `attached`,
     /// `hidden`).
     #[arg(long, short = 'S')]
@@ -57,9 +47,7 @@ impl MailtoCommand {
         let (headers, body) = parse_uri(&self.uri)?;
 
         ComposeCommand {
-            from: self.from,
-            from_name: self.from_name,
-            signature: self.signature,
+            identity: self.identity,
             signature_style: self.signature_style,
             headers: HeaderRawArgs { raw: headers },
             body,

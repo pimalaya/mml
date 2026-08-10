@@ -11,7 +11,7 @@ use pimalaya_cli::printer::Printer;
 use crate::{
     cli::{
         account::Account,
-        args::{HeaderRawArgs, OutputArg, resolve_signature},
+        args::{HeaderRawArgs, IdentityArgs, OutputArg},
         utils::editor::edit_loop,
     },
     template::compose::{MmlTemplateComposeBuilder, MmlTemplateComposeSignatureStyle},
@@ -20,18 +20,8 @@ use crate::{
 /// Compose a new message interactively, using $EDITOR.
 #[derive(Debug, Parser)]
 pub struct ComposeCommand {
-    /// Email address used as the `From:` header. Overrides the
-    /// value from `[accounts.<name>]`.
-    #[arg(long, short)]
-    pub from: Option<String>,
-    /// Display name placed before the `From:` address.
-    #[arg(long, short = 'F')]
-    pub from_name: Option<String>,
-
-    /// Signature body, or path to a file containing it. Overrides
-    /// `[accounts.<name>].signature`.
-    #[arg(long, short)]
-    pub signature: Option<String>,
+    #[command(flatten)]
+    pub identity: IdentityArgs,
     /// How to attach the signature (`inlined`, `attached`,
     /// `hidden`).
     #[arg(long, short = 'S')]
@@ -53,10 +43,9 @@ impl ComposeCommand {
     ) -> Result<()> {
         output.check_editor_can_run()?;
 
-        let account = account
-            .with_from(self.from)
-            .with_from_name(self.from_name)
-            .with_signature(resolve_signature(self.signature))
+        let account = self
+            .identity
+            .merge_into(account)
             .with_compose_signature_style(self.signature_style);
 
         let signature = account.signature();

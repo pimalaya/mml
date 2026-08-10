@@ -11,7 +11,7 @@ use pimalaya_cli::printer::Printer;
 use crate::{
     cli::{
         account::Account,
-        args::{HeaderRawArgs, InputArg, OutputArg, resolve_signature},
+        args::{HeaderRawArgs, IdentityArgs, InputArg, OutputArg},
         utils::editor::edit_loop,
     },
     template::reply::{
@@ -27,18 +27,8 @@ pub struct ReplyCommand {
     #[arg(long = "all", short = 'A')]
     pub reply_all: bool,
 
-    /// Email address used as the `From:` header. Overrides the
-    /// value from `[accounts.<name>]`.
-    #[arg(long, short)]
-    pub from: Option<String>,
-    /// Display name placed before the `From:` address.
-    #[arg(long, short = 'F')]
-    pub from_name: Option<String>,
-
-    /// Signature body, or path to a file containing it. Overrides
-    /// `[accounts.<name>].signature`.
-    #[arg(long, short)]
-    pub signature: Option<String>,
+    #[command(flatten)]
+    pub identity: IdentityArgs,
     /// How to attach the signature (`above-quote`, `below-quote`,
     /// `attached`, `hidden`).
     #[arg(long, short = 'S')]
@@ -72,10 +62,9 @@ impl ReplyCommand {
     ) -> Result<()> {
         output.check_editor_can_run()?;
 
-        let account = account
-            .with_from(self.from)
-            .with_from_name(self.from_name)
-            .with_signature(resolve_signature(self.signature))
+        let account = self
+            .identity
+            .merge_into(account)
             .with_reply_signature_style(self.signature_style)
             .with_reply_posting_style(self.posting_style)
             .with_reply_quote_headline(self.quote_headline);

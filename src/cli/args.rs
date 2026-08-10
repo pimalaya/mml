@@ -16,6 +16,8 @@ use clap::Parser;
 use log::debug;
 use pimalaya_cli::clap::parsers::path_parser;
 
+use crate::cli::account::Account;
+
 /// Where a command reads its source, stdin by default.
 #[derive(Debug, Parser)]
 pub struct InputArg {
@@ -81,6 +83,36 @@ impl OutputArg {
     }
 }
 
+/// Who the message comes from, shared by every command building a
+/// template.
+///
+/// The signature style stays per command: compose and forward accept
+/// `inlined`, reply accepts the quote-relative placements instead.
+#[derive(Debug, Parser)]
+pub struct IdentityArgs {
+    /// Email address used as the `From:` header. Overrides the
+    /// value from `[accounts.<name>]`.
+    #[arg(long, short)]
+    pub from: Option<String>,
+    /// Display name placed before the `From:` address.
+    #[arg(long, short = 'F')]
+    pub from_name: Option<String>,
+    /// Signature body, or path to a file containing it. Overrides
+    /// `[accounts.<name>].signature`.
+    #[arg(long, short)]
+    pub signature: Option<String>,
+}
+
+impl IdentityArgs {
+    /// Overrides the account's identity with whatever was passed.
+    pub fn merge_into(self, account: Account) -> Account {
+        account
+            .with_from(self.from)
+            .with_from_name(self.from_name)
+            .with_signature(self.signature.map(resolve_signature))
+    }
+}
+
 /// Reusable `-H KEY:VAL` repeatable flag, shared by template
 /// builders and the editor-driven commands.
 #[derive(Debug, Parser)]
@@ -101,25 +133,22 @@ fn raw_header_parser(raw_header: &str) -> Result<(String, String), String> {
     }
 }
 
-/// Resolve a `--signature` CLI value: when the input shell-expands
-/// to a readable file, replace it with the file's contents;
-/// otherwise keep the raw value.
-pub fn resolve_signature(raw: Option<String>) -> Option<String> {
-    let raw = raw?;
-
+/// Resolves a `--signature` value: a readable path becomes the file's
+/// contents, anything else stays the raw signature.
+fn resolve_signature(raw: String) -> String {
     let path = match path_parser(&raw) {
         Ok(path) => path,
         Err(err) => {
             debug!("invalid signature path ({err}), using value as raw signature");
-            return Some(raw);
+            return raw;
         }
     };
 
     match fs::read_to_string(&path) {
-        Ok(contents) => Some(contents),
+        Ok(contents) => contents,
         Err(err) => {
             debug!("cannot read signature file {path:?} ({err}), using value as raw signature");
-            Some(raw)
+            raw
         }
     }
 }

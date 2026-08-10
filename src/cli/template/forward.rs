@@ -11,7 +11,7 @@ use pimalaya_cli::printer::Printer;
 use crate::{
     cli::{
         account::Account,
-        args::{HeaderRawArgs, InputArg, resolve_signature},
+        args::{HeaderRawArgs, IdentityArgs, InputArg},
     },
     template::forward::{
         MmlTemplateForwardBuilder, MmlTemplateForwardPostingStyle, MmlTemplateForwardSignatureStyle,
@@ -24,18 +24,8 @@ pub struct TemplateForwardCommand {
     #[command(flatten)]
     pub input: InputArg,
 
-    /// Email address used as the `From:` header. Overrides the
-    /// value from `[accounts.<name>]`.
-    #[arg(short, long)]
-    pub from: Option<String>,
-    /// Display name placed before the `From:` address.
-    #[arg(short = 'F', long)]
-    pub from_name: Option<String>,
-
-    /// Signature body, or path to a file containing it. Overrides
-    /// `[accounts.<name>].signature`.
-    #[arg(short, long)]
-    pub signature: Option<String>,
+    #[command(flatten)]
+    pub identity: IdentityArgs,
     /// How to attach the signature (`inlined`, `attached`,
     /// `hidden`).
     #[arg(short = 'S', long)]
@@ -58,10 +48,9 @@ pub struct TemplateForwardCommand {
 
 impl TemplateForwardCommand {
     pub fn execute(self, printer: &mut impl Printer, account: Account) -> Result<()> {
-        let account = account
-            .with_from(self.from)
-            .with_from_name(self.from_name)
-            .with_signature(resolve_signature(self.signature))
+        let account = self
+            .identity
+            .merge_into(account)
             .with_forward_signature_style(self.signature_style)
             .with_forward_posting_style(self.posting_style)
             .with_reply_quote_headline(self.quote_headline.map(|q| q.replace("\\n", "\n")));
