@@ -1,4 +1,4 @@
-//! Reply template builder: see [`TemplateBuilderReply`] for building
+//! Reply template builder: see [`MmlTemplateReplyBuilder`] for building
 //! a draft reply from a source MIME [`Message`].
 
 use std::{borrow::Cow, collections::HashSet};
@@ -13,11 +13,8 @@ use regex::Regex;
 
 use crate::{
     error::Result,
-    interpreter::{body::FilterParts, message::MimeInterpreterBuilder},
-    template::{
-        address,
-        types::{Template, TemplateBody, TemplateCursor},
-    },
+    interpreter::{body::MmlFilterParts, message::MmlMimeInterpreterBuilder},
+    template::{MmlTemplate, MmlTemplateBody, MmlTemplateCursor, address},
 };
 
 /// Regex used to trim out prefix(es) from a subject.
@@ -35,10 +32,10 @@ fn trim_prefix(subject: &str) -> &str {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct TemplateBuilderReply {
+pub struct MmlTemplateReplyBuilder {
     pub signature: String,
-    pub signature_style: TemplateReplySignatureStyle,
-    pub posting_style: TemplateReplyPostingStyle,
+    pub signature_style: MmlTemplateReplySignatureStyle,
+    pub posting_style: MmlTemplateReplyPostingStyle,
     pub quote_headline: String,
     pub from: String,
     pub from_name: Option<String>,
@@ -47,25 +44,28 @@ pub struct TemplateBuilderReply {
     pub body: String,
 }
 
-impl TemplateBuilderReply {
-    pub fn build(self, msg: &Message) -> Result<Template> {
-        let interpreter = MimeInterpreterBuilder::new()
-            // .with_save_attachments_dir(opts.downloads_dir)
-            .with_show_only_headers(["From", "To", "In-Reply-To", "Cc", "Subject"]);
+impl MmlTemplateReplyBuilder {
+    pub fn build(self, msg: &Message) -> Result<MmlTemplate> {
+        let interpreter = MmlMimeInterpreterBuilder::new().with_show_only_headers([
+            "From",
+            "To",
+            "In-Reply-To",
+            "Cc",
+            "Subject",
+        ]);
 
-        let thread_interpreter = MimeInterpreterBuilder::new()
-            // .with_save_attachments_dir(opts.downloads_dir)
+        let thread_interpreter = MmlMimeInterpreterBuilder::new()
             .with_hide_all_headers()
             .with_show_parts(false)
             .with_show_attachments(false)
             .with_show_inline_attachments(false)
             .with_show_plain_texts_signature(false)
-            .with_filter_parts(FilterParts::Include(vec![
+            .with_filter_parts(MmlFilterParts::Include(vec![
                 "text/plain".into(),
                 "text/html".into(),
             ]));
 
-        let mut cursor = TemplateCursor::default();
+        let mut cursor = MmlTemplateCursor::default();
         let mut builder = MessageBuilder::new();
 
         let me = Addr::new(self.from_name.as_deref(), &self.from);
@@ -151,7 +151,7 @@ impl TemplateBuilderReply {
         // Body
 
         builder = builder.text_body({
-            let mut body = TemplateBody::new(cursor);
+            let mut body = MmlTemplateBody::new(cursor);
 
             let reply_body = thread_interpreter.build().from_msg(msg)?;
             let reply_body = reply_body.trim();
@@ -241,21 +241,21 @@ impl TemplateBuilderReply {
 
         let content = interpreter.build().from_msg_builder(builder)?;
 
-        Ok(Template::new_with_cursor(content, cursor))
+        Ok(MmlTemplate::new_with_cursor(content, cursor))
     }
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "cli", derive(clap::ValueEnum, serde::Deserialize))]
 #[cfg_attr(feature = "cli", serde(rename_all = "kebab-case"))]
-pub enum TemplateReplyPostingStyle {
+pub enum MmlTemplateReplyPostingStyle {
     #[default]
     Top,
     Bottom,
     Interleaved,
 }
 
-impl TemplateReplyPostingStyle {
+impl MmlTemplateReplyPostingStyle {
     pub fn is_top(&self) -> bool {
         self == &Self::Top
     }
@@ -272,7 +272,7 @@ impl TemplateReplyPostingStyle {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "cli", derive(clap::ValueEnum, serde::Deserialize))]
 #[cfg_attr(feature = "cli", serde(rename_all = "kebab-case"))]
-pub enum TemplateReplySignatureStyle {
+pub enum MmlTemplateReplySignatureStyle {
     AboveQuote,
     #[default]
     BelowQuote,
@@ -280,7 +280,7 @@ pub enum TemplateReplySignatureStyle {
     Hidden,
 }
 
-impl TemplateReplySignatureStyle {
+impl MmlTemplateReplySignatureStyle {
     pub fn is_above_quote(&self) -> bool {
         self == &Self::AboveQuote
     }
@@ -304,8 +304,10 @@ mod tests {
     use mail_parser::MessageParser;
 
     use crate::template::{
-        reply::{TemplateBuilderReply, TemplateReplyPostingStyle, TemplateReplySignatureStyle},
-        types::Template,
+        MmlTemplate,
+        reply::{
+            MmlTemplateReplyBuilder, MmlTemplateReplyPostingStyle, MmlTemplateReplySignatureStyle,
+        },
     };
 
     #[test]
@@ -323,14 +325,14 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -358,14 +360,14 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -380,7 +382,7 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 body: "Hello, back!".into(),
@@ -388,7 +390,7 @@ mod tests {
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -403,7 +405,7 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 body: "\n\nHello\n,\nworld!\n\n!".into(),
@@ -411,7 +413,7 @@ mod tests {
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -447,7 +449,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
@@ -455,7 +457,7 @@ mod tests {
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -473,17 +475,17 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
                 // force signature above quote
-                signature_style: TemplateReplySignatureStyle::AboveQuote,
+                signature_style: MmlTemplateReplySignatureStyle::AboveQuote,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -501,17 +503,17 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
                 // force signature hidden
-                signature_style: TemplateReplySignatureStyle::Hidden,
+                signature_style: MmlTemplateReplySignatureStyle::Hidden,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -541,16 +543,16 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 // force the bottom-posting style
-                posting_style: TemplateReplyPostingStyle::Bottom,
+                posting_style: MmlTemplateReplyPostingStyle::Bottom,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -565,16 +567,16 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 // force the interleaved posting style
-                posting_style: TemplateReplyPostingStyle::Interleaved,
+                posting_style: MmlTemplateReplyPostingStyle::Interleaved,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -602,7 +604,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
@@ -610,7 +612,7 @@ mod tests {
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -628,7 +630,7 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
@@ -638,7 +640,7 @@ mod tests {
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -656,19 +658,19 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
                 // with single line body
                 body: "Hello, back!".into(),
                 // force signature above quote
-                signature_style: TemplateReplySignatureStyle::AboveQuote,
+                signature_style: MmlTemplateReplySignatureStyle::AboveQuote,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -686,19 +688,19 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
                 // with multi lines body
                 body: "\n\nHello\n,\nworld!\n\n!".into(),
                 // force signature hidden
-                signature_style: TemplateReplySignatureStyle::Hidden,
+                signature_style: MmlTemplateReplySignatureStyle::Hidden,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -734,19 +736,19 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
                 // force signature above quote
-                signature_style: TemplateReplySignatureStyle::AboveQuote,
+                signature_style: MmlTemplateReplySignatureStyle::AboveQuote,
                 // force bottom-posting style
-                posting_style: TemplateReplyPostingStyle::Bottom,
+                posting_style: MmlTemplateReplyPostingStyle::Bottom,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -764,19 +766,19 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
                 // force signature hidden
-                signature_style: TemplateReplySignatureStyle::Hidden,
+                signature_style: MmlTemplateReplySignatureStyle::Hidden,
                 // force bottom-posting style
-                posting_style: TemplateReplyPostingStyle::Bottom,
+                posting_style: MmlTemplateReplyPostingStyle::Bottom,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -791,19 +793,19 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
                 // force signature above quote
-                signature_style: TemplateReplySignatureStyle::AboveQuote,
+                signature_style: MmlTemplateReplySignatureStyle::AboveQuote,
                 // force interleaved posting style
-                posting_style: TemplateReplyPostingStyle::Interleaved,
+                posting_style: MmlTemplateReplyPostingStyle::Interleaved,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -819,19 +821,19 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
                 // force signature hidden
-                signature_style: TemplateReplySignatureStyle::Hidden,
+                signature_style: MmlTemplateReplySignatureStyle::Hidden,
                 // force interleaved posting style
-                posting_style: TemplateReplyPostingStyle::Interleaved,
+                posting_style: MmlTemplateReplyPostingStyle::Interleaved,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -859,18 +861,18 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 // with single line body
                 body: "Hello, back!".into(),
                 // force the bottom-posting style with body
-                posting_style: TemplateReplyPostingStyle::Bottom,
+                posting_style: MmlTemplateReplyPostingStyle::Bottom,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -885,18 +887,18 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 // with single line body
                 body: "Hello, back!".into(),
                 // force the interleaved posting style with body
-                posting_style: TemplateReplyPostingStyle::Interleaved,
+                posting_style: MmlTemplateReplyPostingStyle::Interleaved,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -926,21 +928,21 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
                 // with single line body
                 body: "Hello, back!".into(),
                 // force signature above quote
-                signature_style: TemplateReplySignatureStyle::AboveQuote,
+                signature_style: MmlTemplateReplySignatureStyle::AboveQuote,
                 // force interleaved posting style
-                posting_style: TemplateReplyPostingStyle::Interleaved,
+                posting_style: MmlTemplateReplyPostingStyle::Interleaved,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",
@@ -977,13 +979,13 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: me@localhost",
                     "To: to@localhost, to2@localhost",
@@ -998,14 +1000,14 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from: "me@localhost".into(),
                 reply_all: true,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: me@localhost",
                     "To: to@localhost, to2@localhost",
@@ -1040,13 +1042,13 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: me@localhost",
                     "To: sender@localhost, mlist@localhost, other@localhost",
@@ -1061,14 +1063,14 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from: "me@localhost".into(),
                 reply_all: true,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: me@localhost",
                     "To: sender@localhost, mlist@localhost, other@localhost",
@@ -1104,13 +1106,13 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: me@localhost",
                     "To: from@localhost, mlist@localhost, other@localhost",
@@ -1125,14 +1127,14 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from: "me@localhost".into(),
                 reply_all: true,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: me@localhost",
                     "To: from@localhost, mlist@localhost, other@localhost",
@@ -1169,13 +1171,13 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: me@localhost",
                     "To: reply-to@localhost",
@@ -1190,14 +1192,14 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from: "me@localhost".into(),
                 reply_all: true,
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: me@localhost",
                     "To: reply-to@localhost",
@@ -1231,13 +1233,13 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: me@localhost",
                     "To: from@localhost, mlist@localhost",
@@ -1279,14 +1281,14 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderReply {
+            MmlTemplateReplyBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 ..Default::default()
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: sender@localhost",

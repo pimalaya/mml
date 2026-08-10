@@ -126,7 +126,7 @@ mod tests {
     use concat_with::concat_line;
 
     use crate::{
-        compiler::message::MmlCompilerBuilder, interpreter::message::MimeInterpreterBuilder,
+        compiler::message::MmlCompilerBuilder, interpreter::message::MmlMimeInterpreterBuilder,
     };
 
     #[test]
@@ -145,7 +145,7 @@ mod tests {
         let mml_compiler = MmlCompilerBuilder::new().build(mml).unwrap();
         let mime_msg_builder = mml_compiler.compile().unwrap().into_msg_builder();
 
-        let mml_msg = MimeInterpreterBuilder::new()
+        let mml_msg = MmlMimeInterpreterBuilder::new()
             .with_show_only_headers(["From", "To", "Subject"])
             .build()
             .from_msg_builder(mime_msg_builder)
@@ -179,7 +179,7 @@ mod tests {
         let mml_compiler = MmlCompilerBuilder::new().build(mml).unwrap();
         let mime_msg_builder = mml_compiler.compile().unwrap().into_msg_builder();
 
-        let mml_msg = MimeInterpreterBuilder::new()
+        let mml_msg = MmlMimeInterpreterBuilder::new()
             .with_show_only_headers(["Message-ID"])
             .build()
             .from_msg_builder(mime_msg_builder)
@@ -211,7 +211,7 @@ mod tests {
         let mml_compiler = MmlCompilerBuilder::new().build(mml).unwrap();
         let mime_msg_builder = mml_compiler.compile().unwrap().into_msg_builder();
 
-        let mml_msg = MimeInterpreterBuilder::new()
+        let mml_msg = MmlMimeInterpreterBuilder::new()
             .with_show_only_headers(["Message-ID"])
             .build()
             .from_msg_builder(mime_msg_builder)
@@ -245,7 +245,7 @@ mod tests {
         let mime_msg_builder = compile_mml_res.clone().into_msg_builder();
         let mime_msg_str = compile_mml_res.into_string().unwrap();
 
-        let mml_msg = MimeInterpreterBuilder::new()
+        let mml_msg = MmlMimeInterpreterBuilder::new()
             .with_show_only_headers(["From", "To", "Subject"])
             .build()
             .from_msg_builder(mime_msg_builder)

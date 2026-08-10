@@ -1,7 +1,31 @@
-//! Root CLI parser and dispatcher: defines the `mml` binary's clap
-//! tree and routes each subcommand to its `execute` method after
-//! merging the per-account DTO from the loaded
-//! [`crate::cli::config::Config`].
+//! `mml` command-line interface: the clap tree and its dispatch.
+//!
+//! [`Cli`] is the root parser and [`Command`] the subcommand enum.
+//! [`Command::execute`] merges the per-account DTO from the loaded
+//! [`config::Config`] and routes each subcommand to its own `execute`
+//! method. The subcommands live in sibling modules (compile, interpret,
+//! compose, reply, forward, template), with the shared pieces under
+//! [`account`], [`args`], [`config`] and [`utils`].
+
+pub mod account;
+pub mod args;
+#[cfg(feature = "compiler")]
+pub mod compile;
+#[cfg(all(feature = "compiler", feature = "interpreter"))]
+pub mod compose;
+pub mod config;
+#[cfg(all(feature = "compiler", feature = "interpreter"))]
+pub mod forward;
+#[cfg(feature = "interpreter")]
+pub mod interpret;
+#[cfg(all(feature = "compiler", feature = "interpreter"))]
+pub mod mailto;
+pub mod printer;
+#[cfg(all(feature = "compiler", feature = "interpreter"))]
+pub mod reply;
+#[cfg(feature = "interpreter")]
+pub mod template;
+pub mod utils;
 
 use std::path::PathBuf;
 
@@ -20,9 +44,11 @@ use pimalaya_config::toml::TomlConfig;
 
 #[cfg(feature = "compiler")]
 use crate::cli::compile::CompileCommand;
-use crate::cli::{account::Account, config::Config};
+use crate::cli::{account::Account, args::OutputArg, config::Config};
 #[cfg(all(feature = "compiler", feature = "interpreter"))]
-use crate::cli::{compose::ComposeCommand, forward::ForwardCommand, reply::ReplyCommand};
+use crate::cli::{
+    compose::ComposeCommand, forward::ForwardCommand, mailto::MailtoCommand, reply::ReplyCommand,
+};
 #[cfg(feature = "interpreter")]
 use crate::cli::{interpret::InterpretCommand, template::TemplateCommand};
 
@@ -35,7 +61,6 @@ use crate::cli::{interpret::InterpretCommand, template::TemplateCommand};
 pub struct Cli {
     #[command(subcommand)]
     pub command: Command,
-
     /// Override the default configuration file path.
     ///
     /// The given paths are shell-expanded then canonicalized (if
@@ -48,31 +73,33 @@ pub struct Cli {
     #[command(flatten)]
     pub account: AccountFlag,
     #[command(flatten)]
+    pub output: OutputArg,
+    #[command(flatten)]
     pub json: JsonFlag,
     #[command(flatten)]
     pub log: LogFlags,
 }
 
+/// The `mml` subcommand set.
 #[derive(Subcommand, Debug)]
 pub enum Command {
     #[cfg(feature = "interpreter")]
     #[command(subcommand)]
     #[clap(visible_alias = "tpl")]
     Templates(TemplateCommand),
-
     #[cfg(feature = "compiler")]
     Compile(CompileCommand),
     #[cfg(feature = "interpreter")]
     #[command(visible_alias = "read")]
     Interpret(InterpretCommand),
-
     #[cfg(all(feature = "compiler", feature = "interpreter"))]
     Compose(ComposeCommand),
     #[cfg(all(feature = "compiler", feature = "interpreter"))]
     Reply(ReplyCommand),
     #[cfg(all(feature = "compiler", feature = "interpreter"))]
     Forward(ForwardCommand),
-
+    #[cfg(all(feature = "compiler", feature = "interpreter"))]
+    Mailto(MailtoCommand),
     Completions(CompletionCommand),
     Manuals(ManualCommand),
 }
@@ -81,6 +108,7 @@ impl Command {
     pub fn execute(
         self,
         printer: &mut impl Printer,
+        output: &OutputArg,
         mut config: Config,
         account_name: Option<&str>,
     ) -> Result<()> {
@@ -106,11 +134,13 @@ impl Command {
             Self::Interpret(cmd) => cmd.execute(printer, account()?),
 
             #[cfg(all(feature = "compiler", feature = "interpreter"))]
-            Self::Compose(cmd) => cmd.execute(printer, account()?),
+            Self::Compose(cmd) => cmd.execute(printer, output, account()?),
             #[cfg(all(feature = "compiler", feature = "interpreter"))]
-            Self::Reply(cmd) => cmd.execute(printer, account()?),
+            Self::Reply(cmd) => cmd.execute(printer, output, account()?),
             #[cfg(all(feature = "compiler", feature = "interpreter"))]
-            Self::Forward(cmd) => cmd.execute(printer, account()?),
+            Self::Forward(cmd) => cmd.execute(printer, output, account()?),
+            #[cfg(all(feature = "compiler", feature = "interpreter"))]
+            Self::Mailto(cmd) => cmd.execute(printer, output, account()?),
 
             Self::Completions(cmd) => cmd.execute(printer, Cli::command()),
             Self::Manuals(cmd) => cmd.execute(printer, Cli::command()),

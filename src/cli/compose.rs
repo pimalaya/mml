@@ -1,29 +1,20 @@
-//! `mml compose`: editor-driven new-message composer. Builds a
-//! draft template from the merged account and CLI args, opens
-//! [`crate::cli::utils::editor::edit_loop`] on it, then writes the
-//! compiled MIME bytes either to the optional output path (when
-//! given) or to stdout. The path-arg form is what parent pipelines
-//! (e.g. `himalaya messages send <path>`) and process-substitution
-//! (`mml compose >(himalaya messages send)`) rely on to keep
-//! `$EDITOR`'s stdout connected to the terminal.
+//! `mml compose`: editor-driven new-message composer. Builds a draft
+//! template from the merged account and CLI args, opens
+//! [`crate::cli::utils::editor::edit_loop`] on it, then prints the
+//! compiled MIME. Refuses to start when stdout is redirected, see
+//! [`crate::cli::args::OutputArg::check_editor_can_run`].
 
-use std::{
-    fs,
-    io::{Write, stdout},
-    path::PathBuf,
-};
-
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 use clap::Parser;
 use pimalaya_cli::printer::Printer;
 
 use crate::{
     cli::{
         account::Account,
-        args::{HeaderRawArgs, resolve_signature},
+        args::{HeaderRawArgs, OutputArg, resolve_signature},
         utils::editor::edit_loop,
     },
-    template::compose::{TemplateBuilderCompose, TemplateComposeSignatureStyle},
+    template::compose::{MmlTemplateComposeBuilder, MmlTemplateComposeSignatureStyle},
 };
 
 /// Compose a new message interactively, using $EDITOR.
@@ -44,25 +35,24 @@ pub struct ComposeCommand {
     /// How to attach the signature (`inlined`, `attached`,
     /// `hidden`).
     #[arg(long, short = 'S')]
-    pub signature_style: Option<TemplateComposeSignatureStyle>,
+    pub signature_style: Option<MmlTemplateComposeSignatureStyle>,
 
     #[command(flatten)]
     pub headers: HeaderRawArgs,
     /// Pre-fill the body before opening the editor.
     #[arg(long, short, default_value_t)]
     pub body: String,
-
-    /// Optional file path to write the compiled MIME message to.
-    /// When omitted, the MIME bytes are written to stdout. Passing a
-    /// path lets the caller pipe mml into a consumer that opens an
-    /// editor (which inherits mml's terminal stdout) without the
-    /// stdout pipe corrupting the editor's UI.
-    #[arg(value_name = "OUTPUT")]
-    pub output: Option<PathBuf>,
 }
 
 impl ComposeCommand {
-    pub fn execute(self, _printer: &mut impl Printer, account: Account) -> Result<()> {
+    pub fn execute(
+        self,
+        printer: &mut impl Printer,
+        output: &OutputArg,
+        account: Account,
+    ) -> Result<()> {
+        output.check_editor_can_run()?;
+
         let account = account
             .with_from(self.from)
             .with_from_name(self.from_name)
@@ -75,7 +65,7 @@ impl ComposeCommand {
             bail!("missing `From` email from both config and args");
         };
 
-        let tpl = TemplateBuilderCompose {
+        let tpl = MmlTemplateComposeBuilder {
             signature,
             signature_style: account.compose_signature_style.unwrap_or_default(),
             from,
@@ -85,12 +75,8 @@ impl ComposeCommand {
         }
         .build()?;
 
-        match edit_loop(tpl, self.output.is_some())? {
-            Some(mime) => match self.output {
-                Some(path) => fs::write(&path, &mime)
-                    .with_context(|| format!("cannot write MIME to {}", path.display())),
-                None => Ok(stdout().write_all(&mime)?),
-            },
+        match edit_loop(tpl, output.path().is_some())? {
+            Some(mime) => printer.out(String::from_utf8(mime)?),
             None => bail!("aborted by user"),
         }
     }

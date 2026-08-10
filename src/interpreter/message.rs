@@ -10,12 +10,12 @@ use mail_parser::{Message, MessageParser};
 use crate::{
     error::{MmlError, Result},
     header,
-    interpreter::body::{FilterParts, MimeBodyInterpreter},
+    interpreter::body::{MmlFilterParts, MmlMimeBodyInterpreter},
 };
 
 /// Filters headers to show in the interpreted message.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub enum FilterHeaders {
+pub enum MmlFilterHeaders {
     /// Include all available headers to the interpreted message.
     #[default]
     All,
@@ -27,7 +27,7 @@ pub enum FilterHeaders {
     Exclude(Vec<String>),
 }
 
-impl FilterHeaders {
+impl MmlFilterHeaders {
     pub fn contains(&self, header: &String) -> bool {
         match self {
             Self::All => false,
@@ -39,29 +39,29 @@ impl FilterHeaders {
 
 /// MIME → MML message interpreter builder.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct MimeInterpreterBuilder {
+pub struct MmlMimeInterpreterBuilder {
     /// The strategy to display headers.
-    show_headers: FilterHeaders,
+    show_headers: MmlFilterHeaders,
 
     /// The internal MIME to MML message body interpreter.
-    mime_body_interpreter: MimeBodyInterpreter,
+    mime_body_interpreter: MmlMimeBodyInterpreter,
 }
 
-impl MimeInterpreterBuilder {
+impl MmlMimeInterpreterBuilder {
     /// Create a new interpreter builder with default options.
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Filter headers with the given strategy.
-    pub fn with_show_headers(mut self, s: FilterHeaders) -> Self {
+    pub fn with_show_headers(mut self, s: MmlFilterHeaders) -> Self {
         self.show_headers = s;
         self
     }
 
     /// Show all headers.
     pub fn with_show_all_headers(mut self) -> Self {
-        self.show_headers = FilterHeaders::All;
+        self.show_headers = MmlFilterHeaders::All;
         self
     }
 
@@ -77,13 +77,13 @@ impl MimeInterpreterBuilder {
             }
             headers
         });
-        self.show_headers = FilterHeaders::Include(headers);
+        self.show_headers = MmlFilterHeaders::Include(headers);
         self
     }
 
     /// Show additional headers.
     // FIXME: seems not to work as expected, maybe need to use a
-    // different structure than [FilterHeaders].
+    // different structure than [MmlFilterHeaders].
     pub fn with_show_additional_headers(
         mut self,
         headers: impl IntoIterator<Item = impl ToString>,
@@ -97,15 +97,15 @@ impl MimeInterpreterBuilder {
         });
 
         match &mut self.show_headers {
-            FilterHeaders::All => {
+            MmlFilterHeaders::All => {
                 // FIXME: this excludes all previous headers, needs to
                 // be separated.
-                self.show_headers = FilterHeaders::Include(next_headers);
+                self.show_headers = MmlFilterHeaders::Include(next_headers);
             }
-            FilterHeaders::Include(headers) => {
+            MmlFilterHeaders::Include(headers) => {
                 headers.extend(next_headers);
             }
-            FilterHeaders::Exclude(headers) => {
+            MmlFilterHeaders::Exclude(headers) => {
                 headers.extend(next_headers);
             }
         };
@@ -115,7 +115,7 @@ impl MimeInterpreterBuilder {
 
     /// Hide all headers.
     pub fn with_hide_all_headers(mut self) -> Self {
-        self.show_headers = FilterHeaders::Include(Vec::new());
+        self.show_headers = MmlFilterHeaders::Include(Vec::new());
         self
     }
 
@@ -132,7 +132,7 @@ impl MimeInterpreterBuilder {
     }
 
     /// Filter parts using the given strategy.
-    pub fn with_filter_parts(mut self, f: FilterParts) -> Self {
+    pub fn with_filter_parts(mut self, f: MmlFilterParts) -> Self {
         self.mime_body_interpreter = self.mime_body_interpreter.with_filter_parts(f);
         self
     }
@@ -180,18 +180,17 @@ impl MimeInterpreterBuilder {
     pub fn with_save_some_attachments_dir(self, dir: Option<impl Into<PathBuf>>) -> Self {
         match dir {
             Some(dir) => self.with_save_attachments_dir(dir),
-            None => {
-                self.with_save_attachments_dir(MimeBodyInterpreter::default_save_attachments_dir())
-            }
+            None => self
+                .with_save_attachments_dir(MmlMimeBodyInterpreter::default_save_attachments_dir()),
         }
     }
 
-    /// Build the final [MimeInterpreter].
+    /// Build the final [MmlMimeInterpreter].
     ///
     /// This intermediate step is not necessary for the interpreter,
     /// the aim is just to have a common API with the compiler.
-    pub fn build(self) -> MimeInterpreter {
-        MimeInterpreter {
+    pub fn build(self) -> MmlMimeInterpreter {
+        MmlMimeInterpreter {
             show_headers: self.show_headers,
             mime_body_interpreter: self.mime_body_interpreter,
         }
@@ -200,30 +199,30 @@ impl MimeInterpreterBuilder {
 
 /// MIME → MML message interpreter.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct MimeInterpreter {
-    show_headers: FilterHeaders,
-    mime_body_interpreter: MimeBodyInterpreter,
+pub struct MmlMimeInterpreter {
+    show_headers: MmlFilterHeaders,
+    mime_body_interpreter: MmlMimeBodyInterpreter,
 }
 
-impl MimeInterpreter {
+impl MmlMimeInterpreter {
     /// Interpret the given MIME [Message] as a MML [String].
     pub fn from_msg(self, msg: &Message<'_>) -> Result<String> {
         let mut mml = String::new();
 
         match self.show_headers {
-            FilterHeaders::All => msg.headers().iter().for_each(|header| {
+            MmlFilterHeaders::All => msg.headers().iter().for_each(|header| {
                 let key = header.name.as_str();
                 let val = header::display_value(key, &header.value);
                 mml.push_str(&format!("{key}: {val}\n"));
             }),
-            FilterHeaders::Include(keys) => keys
+            MmlFilterHeaders::Include(keys) => keys
                 .iter()
                 .filter_map(|key| msg.header(key.as_str()).map(|val| (key, val)))
                 .for_each(|(key, val)| {
                     let val = header::display_value(key, val);
                     mml.push_str(&format!("{key}: {val}\n"));
                 }),
-            FilterHeaders::Exclude(keys) => msg
+            MmlFilterHeaders::Exclude(keys) => msg
                 .headers()
                 .iter()
                 .filter(|header| !keys.contains(&header.name.as_str().to_owned()))
@@ -267,7 +266,7 @@ mod tests {
     use concat_with::concat_line;
     use mail_builder::MessageBuilder;
 
-    use super::MimeInterpreterBuilder;
+    use super::MmlMimeInterpreterBuilder;
 
     fn msg_builder() -> MessageBuilder<'static> {
         MessageBuilder::new()
@@ -282,7 +281,7 @@ mod tests {
 
     #[test]
     fn all_headers() {
-        let mml = MimeInterpreterBuilder::new()
+        let mml = MmlMimeInterpreterBuilder::new()
             .with_show_all_headers()
             .build()
             .from_msg_builder(msg_builder())
@@ -307,7 +306,7 @@ mod tests {
 
     #[test]
     fn only_headers() {
-        let mml = MimeInterpreterBuilder::new()
+        let mml = MmlMimeInterpreterBuilder::new()
             .with_show_only_headers(["From", "Subject"])
             .build()
             .from_msg_builder(msg_builder())
@@ -325,7 +324,7 @@ mod tests {
 
     #[test]
     fn only_headers_duplicated() {
-        let mml = MimeInterpreterBuilder::new()
+        let mml = MmlMimeInterpreterBuilder::new()
             .with_show_only_headers(["From", "Subject", "From"])
             .build()
             .from_msg_builder(msg_builder())
@@ -343,7 +342,7 @@ mod tests {
 
     #[test]
     fn no_headers() {
-        let mml = MimeInterpreterBuilder::new()
+        let mml = MmlMimeInterpreterBuilder::new()
             .with_hide_all_headers()
             .build()
             .from_msg_builder(msg_builder())
@@ -365,7 +364,7 @@ mod tests {
             .subject("subject")
             .text_body("<#part>Should be escaped.<#/part>");
 
-        let mml = MimeInterpreterBuilder::new()
+        let mml = MmlMimeInterpreterBuilder::new()
             .with_show_only_headers(["From", "Subject"])
             .build()
             .from_msg_builder(msg_builder)

@@ -5,7 +5,7 @@ CLI and lib for the Emacs MIME message Meta Language ([MML](https://www.gnu.org/
 This repository ships two layers:
 
 - Low-level **library** exposing two pipelines (MML→MIME compiler, MIME→MML interpreter) and a template builder for compose/reply/forward drafts.
-- High-level **CLI** wrapping the library, plus editor-driven `compose` / `reply` / `forward` commands bundling "template → `$EDITOR` → compile → validate/re-edit/view/abort", and `interpret` (aliased `read`) for the inverse MIME→MML flow.
+- High-level **CLI** wrapping the library, plus editor-driven `compose` / `reply` / `forward` / `mailto` commands bundling "template → `$EDITOR` → compile → validate/re-edit/view/abort", and `interpret` (aliased `read`) for the inverse MIME→MML flow.
 
 ## Table of contents
 
@@ -20,9 +20,10 @@ This repository ships two layers:
   - [Library](#library)
   - [CLI](#cli)
 - [FAQ](#faq)
-- [License](#license)
 - [AI disclosure](#ai-disclosure)
+- [License](#license)
 - [Social](#social)
+- [Contributing](#contributing)
 - [Sponsoring](#sponsoring)
 
 ## Features
@@ -81,7 +82,7 @@ You can also use the git repository for a more up-to-date (but less stable) vers
 cargo install --locked --git https://github.com/pimalaya/mml.git
 ```
 
-To use `mml` as a library, add it to your `Cargo.toml`:
+To use `mml` as a library, add it to your Cargo.toml:
 
 ```toml
 [dependencies]
@@ -116,9 +117,9 @@ nix run
 
 A sample [config.sample.toml](./config.sample.toml) is shipped at the repository root. Drop it into one of:
 
-- `$XDG_CONFIG_HOME/mml/config.toml`
-- `$HOME/.config/mml/config.toml`
-- `$HOME/.mmlrc`
+- $XDG_CONFIG_HOME/mml/config.toml
+- $HOME/.config/mml/config.toml
+- $HOME/.mmlrc
 
 Override the path with `-c <PATH>` or `MML_CONFIG=<PATH>`.
 
@@ -128,77 +129,61 @@ CLI flags always win; config values fill in the blanks. Pick an account with `-a
 
 ### Library
 
-Compile MML to MIME:
-
-```rust,ignore
-use mml::compiler::message::MmlCompilerBuilder;
-
-let mml = "<#part>Hello, world!<#/part>";
-let mime = MmlCompilerBuilder::new()
-    .build(mml)?
-    .compile()?
-    .into_string()?;
-
-println!("{mime}");
-```
-
-Interpret MIME back to MML:
-
-```rust,ignore
-use mml::interpreter::message::MimeInterpreterBuilder;
-
-let mime = b"From: a@b\r\nTo: c@d\r\nSubject: Hi\r\n\r\nHello!\r\n";
-let mml = MimeInterpreterBuilder::new()
-    .with_show_only_headers(["From", "To", "Subject"])
-    .build()
-    .from_bytes(mime)?;
-
-println!("{mml}");
-```
+The whole API is documented on [docs.rs](https://docs.rs/mime-meta-language/latest/mml): the compiler pipeline, the interpreter pipeline, and the template builders they share.
 
 ### CLI
 
-Compile MML on stdin, emit MIME on stdout:
+Every command documents itself: `mml --help` lists them, `mml <command> --help` details one. A few real-world lines follow.
+
+Every command reads its source from stdin and writes its artifact to stdout by default. `-i, --input <PATH>` reads a file instead, `-o, --output <PATH>` writes one, and `-` names the stream explicitly in either (use `./-` for a file actually called `-`). `--output` is independent of `--json`: the first picks where the payload lands, the second picks its format, so `--json --output result.json` writes JSON to that file.
+
+Compile MML on stdin, emit MIME on stdout. The source is a full message: headers, a blank line, then the MML body.
 
 ```sh
-mml compile <<< '<#part>Hello, world!<#/part>'
+printf 'From: me@example.org\nTo: you@example.org\nSubject: Hi\n\n<#part>Hello, world!<#/part>' | mml compile
 ```
 
-Interpret MIME back to MML/text:
+Interpret MIME back to MML or text:
 
 ```sh
-mml interpret < message.eml
+mml interpret --input message.eml
 ```
 
-Open the editor on a fresh compose draft, then emit the compiled MIME message on stdout, or to a file when a path is given:
+Open the editor on a fresh compose draft, then emit the compiled MIME message:
 
 ```sh
 mml compose --from me@example.org
-mml compose --from me@example.org /tmp/draft.eml
+mml compose --from me@example.org --output /tmp/draft.eml
 ```
 
-Reply / forward read the source MIME on stdin (or from a path after `--`) and route the result the same way; the leading positional is the optional output path:
+Reply and forward read the source MIME the same way and route the result the same way:
 
 ```sh
 cat message.eml | mml reply --all
-cat message.eml | mml forward /tmp/draft.eml
-mml reply --all /tmp/draft.eml -- /tmp/source.eml
+mml forward --input message.eml --output /tmp/draft.eml
 ```
 
 Pipelines into himalaya v2:
 
 ```sh
-mml compose --from me@example.org /tmp/draft.eml && himalaya messages send /tmp/draft.eml
-mml compose --from me@example.org >(himalaya messages send)
-himalaya messages read 42 | mml reply >(himalaya messages send)
+mml compose --from me@example.org --output /tmp/draft.eml && himalaya messages send /tmp/draft.eml
+mml compose --from me@example.org --output >(himalaya messages send)
+himalaya messages read 42 | mml reply --output >(himalaya messages send)
 ```
 
-The path-arg or process-substitution forms keep mml's stdout connected to the terminal, so the editor mml spawns sees a real tty. The bare-pipe form `mml compose | himalaya messages send` hangs the editor because mml's stdout (and therefore the editor's inherited stdout) is the pipe to himalaya.
+An editor-driven command needs stdout to stay on the terminal, because the editor it spawns inherits that stream. Writing to a path, whether a real file or a process substitution, satisfies that. The bare-pipe form `mml compose | himalaya messages send` cannot work, and mml now refuses it with an error naming the fix instead of hanging.
 
 Read (MIME → text), useful for piping through `less` or chaining with himalaya:
 
 ```sh
 cat message.eml | mml read --exclude-header Received,DKIM-Signature
+```
+
+Compose from a `mailto:` URI, which is what a desktop handler registers:
+
+```sh
+mml mailto 'mailto:you@example.org?subject=Hi&body=Hello'
+mml mailto "$1" --output /tmp/draft.eml && himalaya messages send /tmp/draft.eml
 ```
 
 Generate a draft template without opening the editor:
@@ -209,11 +194,11 @@ mml template reply --all < message.eml
 mml template forward < message.eml
 ```
 
-Plug `mml` into [himalaya](https://github.com/pimalaya/himalaya) v2 by wiring shell pipelines or aliases against the `messages send` / `messages add` / `messages read` primitives. A typical `.bashrc` snippet:
+Plug `mml` into [himalaya](https://github.com/pimalaya/himalaya) v2 by wiring shell pipelines or aliases against the `messages send` / `messages add` / `messages read` primitives. A typical .bashrc snippet:
 
 ```sh
-hsend() { local f=$(mktemp --suffix=.eml); mml compose "$f" && himalaya messages send "$f"; rm -f "$f"; }
-hreply() { himalaya messages read "$1" | mml reply >(himalaya messages send); }
+hsend() { local f=$(mktemp --suffix=.eml); mml compose -o "$f" && himalaya messages send "$f"; rm -f "$f"; }
+hreply() { himalaya messages read "$1" | mml reply -o >(himalaya messages send); }
 ```
 
 ## FAQ
@@ -242,6 +227,17 @@ hreply() { himalaya messages read "$1" | mml reply >(himalaya messages send); }
   The [edit](https://crates.io/crates/edit) crate resolves `$VISUAL` first, then `$EDITOR`, then an OS default. `mml` does not expose a config knob on top: set `VISUAL` / `EDITOR` in your shell rc file.
 </details>
 
+## AI disclosure
+
+This project is developed with AI assistance. This section documents how, so users and downstream packagers can make informed decisions.
+
+- **Tools**: Claude Code (Anthropic), invoked locally with a persistent project-scoped memory and a small set of repo-specific rules.
+- **Used for**: Refactors, mechanical multi-file edits, boilerplate (feature gates, error enums, derive macros, trait impls), test scaffolding, doc polish, exploratory design conversations.
+- **Not used for**: Engineering, critical code, git manipulation (commit, merge, rebase…), real-world tests.
+- **Verification**: Every AI-assisted change is read, compiled, tested, and formatted before commit. Behavioural correctness is verified against the relevant RFC or upstream spec, not assumed from the model output. Tests are never adjusted to fit AI-generated code; the code is adjusted to fit correct behaviour.
+- **Limitations**: AI models occasionally produce code that compiles and passes tests but is subtly wrong. The verification workflow catches most of this; it does not catch all of it. Bug reports are welcome and taken seriously.
+- **Last reviewed**: 31/05/2026
+
 ## License
 
 This project is licensed under either of:
@@ -251,27 +247,15 @@ This project is licensed under either of:
 
 at your option.
 
-## AI disclosure
-
-This project is developed with AI assistance. This section documents how, so users and downstream packagers can make informed decisions.
-
-- **Tools**: Claude Code (Anthropic), Opus 4.7, invoked locally with a persistent project-scoped memory and a small set of repo-specific rules.
-
-- **Used for**: Refactors, mechanical multi-file edits, boilerplate (feature gates, error enums, derive macros, trait impls), test scaffolding, doc polish, exploratory design conversations.
-
-- **Not used for**: Engineering, critical code, git manipulation (commit, merge, rebase…), real-world tests.
-
-- **Verification**: Every AI-assisted change is read, compiled, tested, and formatted before commit (`nix develop --command cargo check / cargo test / cargo fmt`). Behavioural correctness is verified against the relevant RFC or upstream spec, not assumed from the model output. Tests are never adjusted to fit AI-generated code; the code is adjusted to fit correct behaviour.
-
-- **Limitations**: AI models occasionally produce code that compiles and passes tests but is subtly wrong: off-by-one errors, missed edge cases, plausible but nonexistent APIs, stale RFC references. The verification workflow catches most of this; it does not catch all of it. Bug reports are welcome and taken seriously.
-
-- **Last reviewed**: 31/05/2026
-
 ## Social
 
 - Chat on [Matrix](https://matrix.to/#/#pimalaya:matrix.org)
 - News on [Mastodon](https://fosstodon.org/@pimalaya) or [RSS](https://fosstodon.org/@pimalaya.rss)
 - Mail at [pimalaya.org@posteo.net](mailto:pimalaya.org@posteo.net)
+
+## Contributing
+
+Contributions are welcome: start with [CONTRIBUTING.md](./CONTRIBUTING.md), which opens with the Pimalaya-wide guides to read first.
 
 ## Sponsoring
 

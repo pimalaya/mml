@@ -1,9 +1,9 @@
 //! `mml interpret`: MIME to MML pipeline. Reads a MIME message from
-//! the positional argument or stdin, applies the merged `[read]`
-//! defaults (overridable per flag), and writes the rendered MML on
-//! stdout. Exposed under the visible alias `mml read` so callers can
-//! pipe it directly from `himalaya messages read --raw <id>` or any
-//! other MIME source.
+//! `--input` or stdin, applies the merged `[read]` defaults
+//! (overridable per flag), and prints the rendered MML.
+//!
+//! Aliased `mml read`, so it can be piped straight from
+//! `himalaya messages read --raw <id>` or any other MIME source.
 
 use std::path::PathBuf;
 
@@ -12,20 +12,18 @@ use clap::Parser;
 use pimalaya_cli::printer::{Message, Printer};
 
 use crate::{
-    cli::{account::Account, args::MessageArg},
+    cli::{account::Account, args::InputArg},
     interpreter::{
-        body::FilterParts,
-        message::{FilterHeaders, MimeInterpreterBuilder},
+        body::MmlFilterParts,
+        message::{MmlFilterHeaders, MmlMimeInterpreterBuilder},
     },
 };
 
 /// Interpret a MIME message back into an MML message.
 #[derive(Debug, Parser)]
 pub struct InterpretCommand {
-    /// Path to a MIME file, a raw MIME string, or nothing when piped
-    /// on stdin.
     #[command(flatten)]
-    pub mime: MessageArg,
+    pub input: InputArg,
 
     /// Whitelist of header names to keep; all others are dropped.
     #[arg(long, conflicts_with = "exclude_header")]
@@ -73,7 +71,7 @@ pub struct InterpretCommand {
 
 impl InterpretCommand {
     pub fn execute(self, printer: &mut impl Printer, account: Account) -> Result<()> {
-        let mime = self.mime.parse().ok().unwrap_or_default();
+        let mime = self.input.read()?;
 
         let account = account
             .with_read_include_headers(self.include_header)
@@ -88,18 +86,18 @@ impl InterpretCommand {
             .with_read_hide_plain_texts_signature(flag(self.hide_plain_texts_signature));
 
         let filter_headers = match (account.read_exclude_headers, account.read_include_headers) {
-            (Some(headers), _) => FilterHeaders::Exclude(headers),
-            (None, Some(headers)) => FilterHeaders::Include(headers),
-            (None, None) => FilterHeaders::All,
+            (Some(headers), _) => MmlFilterHeaders::Exclude(headers),
+            (None, Some(headers)) => MmlFilterHeaders::Include(headers),
+            (None, None) => MmlFilterHeaders::All,
         };
 
         let filter_parts = match (account.read_exclude_parts, account.read_include_parts) {
-            (Some(parts), _) => FilterParts::Exclude(parts),
+            (Some(parts), _) => MmlFilterParts::Exclude(parts),
             (None, Some(parts)) if parts.len() == 1 => {
-                FilterParts::Only(parts.into_iter().next().unwrap())
+                MmlFilterParts::Only(parts.into_iter().next().unwrap())
             }
-            (None, Some(parts)) => FilterParts::Include(parts),
-            (None, None) => FilterParts::All,
+            (None, Some(parts)) => MmlFilterParts::Include(parts),
+            (None, None) => MmlFilterParts::All,
         };
 
         let show_multiparts = account.read_show_multiparts.unwrap_or(false);
@@ -109,7 +107,7 @@ impl InterpretCommand {
         let show_inline_attachments = !account.read_hide_inline_attachments.unwrap_or(false);
         let show_plain_texts_signature = !account.read_hide_plain_texts_signature.unwrap_or(false);
 
-        let interpreter = MimeInterpreterBuilder::new()
+        let interpreter = MmlMimeInterpreterBuilder::new()
             .with_show_headers(filter_headers)
             .with_filter_parts(filter_parts)
             .with_show_multiparts(show_multiparts)

@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added the `mailto` command, composing from an RFC 6068 `mailto:` URI. Recipients come from the path and the `to` query parameter, `subject`, `cc`, `bcc` and `in-reply-to` become headers, and `body` pre-fills the draft.
+
+  Headers outside that set are dropped, as RFC 6068 section 5 advises against honouring arbitrary headers from an untrusted URI. Register `mml mailto "$1" --output <PATH>` as a desktop handler.
+
+- Added the global `-o, --output <PATH>` flag, redirecting a command's artifact to a file. It defaults to stdout, and `-o -` names stdout explicitly.
+
+  It is independent of `--json`: `--output` picks where the payload lands, `--json` picks its format, so `--json --output result.json` writes JSON to that file.
+
+- Added the `-i, --input <PATH>` flag to every command reading a source, defaulting to stdin, with `-i -` naming stdin explicitly. An implicit stdin that is a terminal is rejected rather than left hanging.
+
+### Changed
+
+- Renamed every public library item to carry the `Mml` domain prefix, per the Pimalaya naming guidelines: `Template` became `MmlTemplate`, `TemplateCursor` became `MmlTemplateCursor`, `TemplateBody` became `MmlTemplateBody`, `TemplateBuilderCompose` became `MmlTemplateComposeBuilder` (same for reply and forward), the `Template*Style` enums gained the prefix, `MimeInterpreter` became `MmlMimeInterpreter`, `MimeInterpreterBuilder` became `MmlMimeInterpreterBuilder`, `MimeBodyInterpreter` became `MmlMimeBodyInterpreter`, and `FilterHeaders` / `FilterParts` became `MmlFilterHeaders` / `MmlFilterParts`.
+
+- Moved the shared template types out of the `template::types` catch-all module and up into `template`, so they are reached as `mml::template::MmlTemplate` instead of `mml::template::types::Template`.
+
+- Declared `default-features = false` on every dependency, enabling only the features actually used.
+
+### Removed
+
+- Removed the optional leading positional output path on `compose`, `reply` and `forward`. Use `--output <PATH>` instead, which no longer depends on positional order.
+
+- Removed the trailing positional `MESSAGE` argument from every command. Sources now come from `--input <PATH>` or stdin.
+
+  It was reachable only after a `--` separator, it silently lost to `--input`, and being a trailing var-arg it swallowed any flag typed after it. Its three roles are covered: a path is `--input PATH`, stdin is the default or `--input -`, and an inline message is a pipe or `--input <(printf ...)`.
+
+  `mml reply <OUTPUT> -- <SOURCE>` becomes `mml reply --output <OUTPUT> --input <SOURCE>`.
+
+### Fixed
+
+- Fixed `compose`, `reply` and `forward` hanging when their output would land on a redirected stdout. The editor inherits that stream, so its interface never reaches the terminal. The commands now refuse to start, with an error naming the fix.
+
 ## [1.1.1] - 2026-06-07
 
 ### Fixed

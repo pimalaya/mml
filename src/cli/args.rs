@@ -1,15 +1,85 @@
 //! Reusable clap arg groups shared between the editor-driven
 //! commands and their `template` counterparts.
+//!
+//! Commands read from stdin and write to stdout by default.
+//! [`InputArg`] and [`OutputArg`] redirect either end to a file, `-`
+//! naming the stream.
 
 use std::{
     fs,
-    io::{IsTerminal, stdin},
+    io::{IsTerminal, Read, stdin, stdout},
+    path::{Path, PathBuf},
 };
 
-use anyhow::bail;
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 use log::debug;
 use pimalaya_cli::clap::parsers::path_parser;
+
+/// Where a command reads its source, stdin by default.
+#[derive(Debug, Parser)]
+pub struct InputArg {
+    /// Read the source from PATH instead of stdin.
+    ///
+    /// Pass `-` for stdin, `./-` for a file named `-`.
+    #[arg(long, short = 'i', value_name = "PATH")]
+    pub input: Option<PathBuf>,
+}
+
+impl InputArg {
+    /// Reads the source from the given path, or from stdin.
+    ///
+    /// NOTE: an implicit stdin that is a terminal would just hang, so
+    /// it is rejected. An explicit `-i -` still reads the terminal.
+    pub fn read(&self) -> Result<String> {
+        if let Some(path) = self.input.as_deref().filter(|path| *path != Path::new("-")) {
+            return fs::read_to_string(path)
+                .with_context(|| format!("Cannot read input from {}", path.display()));
+        }
+
+        if self.input.is_none() && stdin().is_terminal() {
+            bail!("Cannot read the source: stdin is a terminal, pass --input <PATH>");
+        }
+
+        let mut buffer = String::new();
+        stdin()
+            .read_to_string(&mut buffer)
+            .context("Cannot read input from stdin")?;
+
+        Ok(buffer)
+    }
+}
+
+/// Where a command writes its artifact, stdout by default.
+#[derive(Debug, Parser)]
+pub struct OutputArg {
+    /// Write the result to PATH instead of stdout.
+    ///
+    /// Pass `-` for stdout, `./-` for a file named `-`.
+    #[arg(long, short = 'o', global = true, value_name = "PATH")]
+    pub output: Option<PathBuf>,
+}
+
+impl OutputArg {
+    /// Resolves the destination file, `None` meaning stdout.
+    pub fn path(&self) -> Option<&Path> {
+        self.output
+            .as_deref()
+            .filter(|path| *path != Path::new("-"))
+    }
+
+    /// Rejects an editor-driven run whose stdout is redirected.
+    ///
+    /// NOTE: the editor inherits stdout, so a pipe there swallows its
+    /// interface. A path, `>(consumer)` included, keeps stdout free.
+    pub fn check_editor_can_run(&self) -> Result<()> {
+        if self.path().is_none() && !stdout().is_terminal() {
+            bail!("Cannot open the editor: stdout is redirected, pass --output <PATH>");
+        }
+
+        Ok(())
+    }
+}
 
 /// Reusable `-H KEY:VAL` repeatable flag, shared by template
 /// builders and the editor-driven commands.
@@ -28,39 +98,6 @@ fn raw_header_parser(raw_header: &str) -> Result<(String, String), String> {
         Ok((key.trim().to_owned(), val.trim().to_owned()))
     } else {
         Err(format!("cannot parse raw header {raw_header:?}"))
-    }
-}
-
-#[derive(Debug, Parser)]
-pub struct MessageArg {
-    /// Can be a path to a file, raw message contents or nothing if piped via
-    /// standard input.
-    #[arg(name = "message-raw", value_name = "MESSAGE", raw = true)]
-    pub raw: Vec<String>,
-}
-
-impl MessageArg {
-    pub fn parse(&self) -> anyhow::Result<String> {
-        if !self.raw.is_empty() {
-            let mime = self.raw.join(" ").replace("\\r", "").replace("\\n", "\r\n");
-
-            let Ok(path) = path_parser(&mime) else {
-                return Ok(mime);
-            };
-
-            let Ok(mime) = fs::read_to_string(path) else {
-                return Ok(mime);
-            };
-
-            return Ok(mime);
-        }
-
-        if !stdin().is_terminal() {
-            let lines: Vec<_> = stdin().lines().map_while(Result::ok).collect();
-            return Ok(lines.join("\r\n"));
-        }
-
-        bail!("Message cannot be empty");
     }
 }
 

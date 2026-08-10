@@ -22,7 +22,7 @@ use crate::{
     cli::utils::choice::{PostEditChoice, post_edit},
     compiler::message::MmlCompilerBuilder,
     error::MmlError,
-    template::types::Template,
+    template::MmlTemplate,
 };
 
 /// Compose loop: edit → compile → prompt → loop.
@@ -31,7 +31,7 @@ use crate::{
 /// "Save to file" and "Save to stdout"; the actual write happens at
 /// the caller. Returns `Ok(Some(mime))` when the user saves,
 /// `Ok(None)` on abort.
-pub fn edit_loop(initial: Template, has_output_path: bool) -> Result<Option<Vec<u8>>> {
+pub fn edit_loop(initial: MmlTemplate, has_output_path: bool) -> Result<Option<Vec<u8>>> {
     let mut buffer = initial.content;
 
     loop {

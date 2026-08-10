@@ -1,5 +1,32 @@
-#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
-#![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
+//! # mml
+//!
+//! A Rust implementation of the Emacs MIME Meta Language (MML): a
+//! plain-text markup that compiles to a full MIME message, and its
+//! inverse rendering back to readable text.
+//!
+//! ## Layout
+//!
+//! The crate is two feature-gated pipelines plus a template layer and
+//! an optional CLI:
+//!
+//! - The compiler module (feature `compiler`) turns MML markup into a
+//!   MIME message. Its parser submodule tokenizes and parses the
+//!   `<#part>` / `<#multipart>` grammar, and its message submodule
+//!   assembles the parts into MIME via mail-builder.
+//! - The interpreter module (feature `interpreter`) walks a parsed
+//!   MIME message (mail-parser) back into MML or plain text, applying
+//!   the header and part filters.
+//! - [`template`] builds compose, reply and forward drafts, the
+//!   starting point both pipelines share.
+//! - [`error`] is the crate-wide error type.
+//! - The cli module (feature `cli`) is the `mml` binary: the clap
+//!   tree, the TOML configuration, and the editor-driven flow. It is
+//!   not part of the library contract.
+//!
+//! Two private modules, grammar and header, hold helpers shared by the
+//! compiler and interpreter.
 
 #[cfg(feature = "cli")]
 pub mod cli;

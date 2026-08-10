@@ -1,19 +1,9 @@
-//! `mml reply`: editor-driven reply composer. Reads the source MIME
-//! message on stdin (or from a path/inline value), builds a reply
-//! template via [`crate::template::reply::TemplateBuilderReply`],
-//! runs the [`crate::cli::utils::editor::edit_loop`], and emits the
-//! compiled MIME bytes either to the optional output path or to
-//! stdout. Source MIME after `--` is `MessageArg`'s
-//! trailing-var-arg slot; the leading positional is the output
-//! path.
+//! `mml reply`: editor-driven reply composer. Reads the source MIME,
+//! builds a template via
+//! [`crate::template::reply::MmlTemplateReplyBuilder`], runs the
+//! [`crate::cli::utils::editor::edit_loop`], prints the compiled MIME.
 
-use std::{
-    fs,
-    io::{Write, stdout},
-    path::PathBuf,
-};
-
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 use clap::Parser;
 use mail_parser::MessageParser;
 use pimalaya_cli::printer::Printer;
@@ -21,11 +11,11 @@ use pimalaya_cli::printer::Printer;
 use crate::{
     cli::{
         account::Account,
-        args::{HeaderRawArgs, MessageArg, resolve_signature},
+        args::{HeaderRawArgs, InputArg, OutputArg, resolve_signature},
         utils::editor::edit_loop,
     },
     template::reply::{
-        TemplateBuilderReply, TemplateReplyPostingStyle, TemplateReplySignatureStyle,
+        MmlTemplateReplyBuilder, MmlTemplateReplyPostingStyle, MmlTemplateReplySignatureStyle,
     },
 };
 
@@ -52,12 +42,12 @@ pub struct ReplyCommand {
     /// How to attach the signature (`above-quote`, `below-quote`,
     /// `attached`, `hidden`).
     #[arg(long, short = 'S')]
-    pub signature_style: Option<TemplateReplySignatureStyle>,
+    pub signature_style: Option<MmlTemplateReplySignatureStyle>,
 
     /// Where to place the reply relative to the quoted thread
     /// (`top`, `bottom`, `interleaved`).
     #[arg(long, short = 'P')]
-    pub posting_style: Option<TemplateReplyPostingStyle>,
+    pub posting_style: Option<MmlTemplateReplyPostingStyle>,
     /// Line printed above the quoted thread. Supports `\n` to insert
     /// a newline.
     #[arg(long, short = 'Q')]
@@ -69,19 +59,19 @@ pub struct ReplyCommand {
     #[arg(long, short, default_value_t)]
     pub body: String,
 
-    /// Optional file path to write the compiled MIME message to.
-    /// When omitted, the MIME bytes are written to stdout. See
-    /// [`crate::cli::compose::ComposeCommand::output`] for the
-    /// rationale.
-    #[arg(value_name = "PATH")]
-    pub output: Option<PathBuf>,
-
     #[command(flatten)]
-    pub mime: MessageArg,
+    pub input: InputArg,
 }
 
 impl ReplyCommand {
-    pub fn execute(self, _printer: &mut impl Printer, account: Account) -> Result<()> {
+    pub fn execute(
+        self,
+        printer: &mut impl Printer,
+        output: &OutputArg,
+        account: Account,
+    ) -> Result<()> {
+        output.check_editor_can_run()?;
+
         let account = account
             .with_from(self.from)
             .with_from_name(self.from_name)
@@ -96,13 +86,13 @@ impl ReplyCommand {
             bail!("missing `From` email from both config and args");
         };
 
-        let mime = self.mime.parse()?.into_bytes();
+        let mime = self.input.read()?.into_bytes();
 
         let Some(msg) = MessageParser::new().parse(&mime) else {
             bail!("invalid or malformed MIME message on stdin");
         };
 
-        let tpl = TemplateBuilderReply {
+        let tpl = MmlTemplateReplyBuilder {
             reply_all: self.reply_all,
             signature,
             signature_style: account.reply_signature_style.unwrap_or_default(),
@@ -115,12 +105,8 @@ impl ReplyCommand {
         }
         .build(&msg)?;
 
-        match edit_loop(tpl, self.output.is_some())? {
-            Some(mime) => match self.output {
-                Some(path) => fs::write(&path, &mime)
-                    .with_context(|| format!("cannot write MIME to {}", path.display())),
-                None => Ok(stdout().write_all(&mime)?),
-            },
+        match edit_loop(tpl, output.path().is_some())? {
+            Some(mime) => printer.out(String::from_utf8(mime)?),
             None => bail!("aborted by user"),
         }
     }

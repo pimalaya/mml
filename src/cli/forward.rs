@@ -1,16 +1,8 @@
 //! `mml forward`: editor-driven forward composer. Same shape as
 //! [`crate::cli::reply`], built around
-//! [`crate::template::forward::TemplateBuilderForward`]. Optional
-//! leading positional output path, source MIME after `--` (or via
-//! stdin).
+//! [`crate::template::forward::MmlTemplateForwardBuilder`].
 
-use std::{
-    fs,
-    io::{Write, stdout},
-    path::PathBuf,
-};
-
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 use clap::Parser;
 use mail_parser::MessageParser;
 use pimalaya_cli::printer::Printer;
@@ -18,11 +10,11 @@ use pimalaya_cli::printer::Printer;
 use crate::{
     cli::{
         account::Account,
-        args::{HeaderRawArgs, MessageArg, resolve_signature},
+        args::{HeaderRawArgs, InputArg, OutputArg, resolve_signature},
         utils::editor::edit_loop,
     },
     template::forward::{
-        TemplateBuilderForward, TemplateForwardPostingStyle, TemplateForwardSignatureStyle,
+        MmlTemplateForwardBuilder, MmlTemplateForwardPostingStyle, MmlTemplateForwardSignatureStyle,
     },
 };
 
@@ -44,11 +36,11 @@ pub struct ForwardCommand {
     /// How to attach the signature (`inlined`, `attached`,
     /// `hidden`).
     #[arg(long, short = 'S')]
-    pub signature_style: Option<TemplateForwardSignatureStyle>,
+    pub signature_style: Option<MmlTemplateForwardSignatureStyle>,
 
     /// How to attach the forwarded message (`top`, `attached`).
     #[arg(long, short = 'P')]
-    pub posting_style: Option<TemplateForwardPostingStyle>,
+    pub posting_style: Option<MmlTemplateForwardPostingStyle>,
     /// Line printed above the forwarded message. Supports `\n` to
     /// insert a newline.
     #[arg(long, short = 'Q')]
@@ -60,19 +52,19 @@ pub struct ForwardCommand {
     #[arg(long, short, default_value_t)]
     pub body: String,
 
-    /// Optional file path to write the compiled MIME message to.
-    /// When omitted, the MIME bytes are written to stdout. See
-    /// [`crate::cli::compose::ComposeCommand::output`] for the
-    /// rationale.
-    #[arg(value_name = "PATH")]
-    pub output: Option<PathBuf>,
-
     #[command(flatten)]
-    pub mime: MessageArg,
+    pub input: InputArg,
 }
 
 impl ForwardCommand {
-    pub fn execute(self, _printer: &mut impl Printer, account: Account) -> Result<()> {
+    pub fn execute(
+        self,
+        printer: &mut impl Printer,
+        output: &OutputArg,
+        account: Account,
+    ) -> Result<()> {
+        output.check_editor_can_run()?;
+
         let account = account
             .with_from(self.from)
             .with_from_name(self.from_name)
@@ -87,13 +79,13 @@ impl ForwardCommand {
             bail!("missing `From` email from both config and args");
         };
 
-        let mime = self.mime.parse()?.into_bytes();
+        let mime = self.input.read()?.into_bytes();
 
         let Some(msg) = MessageParser::new().parse(&mime) else {
             bail!("invalid or malformed MIME message on stdin");
         };
 
-        let tpl = TemplateBuilderForward {
+        let tpl = MmlTemplateForwardBuilder {
             signature,
             signature_style: account.forward_signature_style.unwrap_or_default(),
             posting_style: account.forward_posting_style.unwrap_or_default(),
@@ -105,12 +97,8 @@ impl ForwardCommand {
         }
         .build(&msg)?;
 
-        match edit_loop(tpl, self.output.is_some())? {
-            Some(mime) => match self.output {
-                Some(path) => fs::write(&path, &mime)
-                    .with_context(|| format!("cannot write MIME to {}", path.display())),
-                None => Ok(stdout().write_all(&mime)?),
-            },
+        match edit_loop(tpl, output.path().is_some())? {
+            Some(mime) => printer.out(String::from_utf8(mime)?),
             None => bail!("aborted by user"),
         }
     }

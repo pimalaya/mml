@@ -1,4 +1,4 @@
-//! Compose template builder: see [`TemplateBuilderCompose`] for
+//! Compose template builder: see [`MmlTemplateComposeBuilder`] for
 //! building a draft template for a brand-new message (no source).
 
 use mail_builder::{
@@ -8,29 +8,29 @@ use mail_builder::{
 
 use crate::{
     error::Result,
-    interpreter::message::MimeInterpreterBuilder,
-    template::types::{Template, TemplateBody, TemplateCursor},
+    interpreter::message::MmlMimeInterpreterBuilder,
+    template::{MmlTemplate, MmlTemplateBody, MmlTemplateCursor},
 };
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct TemplateBuilderCompose {
+pub struct MmlTemplateComposeBuilder {
     pub signature: String,
-    pub signature_style: TemplateComposeSignatureStyle,
+    pub signature_style: MmlTemplateComposeSignatureStyle,
     pub from: String,
     pub from_name: Option<String>,
     pub headers: Vec<(String, String)>,
     pub body: String,
 }
 
-impl TemplateBuilderCompose {
-    pub fn build(self) -> Result<Template> {
-        let interpreter = MimeInterpreterBuilder::new()
+impl MmlTemplateComposeBuilder {
+    pub fn build(self) -> Result<MmlTemplate> {
+        let interpreter = MmlMimeInterpreterBuilder::new()
             .with_show_only_headers(["From", "To", "In-Reply-To", "Cc", "Subject"])
             .with_show_additional_headers(self.headers.iter().map(|(h, _)| h))
             .with_save_attachments(true);
 
         let mut msg = MessageBuilder::default();
-        let mut cursor = TemplateCursor::default();
+        let mut cursor = MmlTemplateCursor::default();
 
         msg = msg.from((
             self.from_name.as_deref().unwrap_or_default(),
@@ -51,7 +51,7 @@ impl TemplateBuilderCompose {
         }
 
         msg = msg.text_body({
-            let mut body = TemplateBody::new(cursor);
+            let mut body = MmlTemplateBody::new(cursor);
 
             body.push_str(&self.body);
             body.flush();
@@ -72,21 +72,21 @@ impl TemplateBuilderCompose {
 
         let content = interpreter.build().from_msg_builder(msg)?;
 
-        Ok(Template::new_with_cursor(content, cursor))
+        Ok(MmlTemplate::new_with_cursor(content, cursor))
     }
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "cli", derive(clap::ValueEnum, serde::Deserialize))]
 #[cfg_attr(feature = "cli", serde(rename_all = "kebab-case"))]
-pub enum TemplateComposeSignatureStyle {
+pub enum MmlTemplateComposeSignatureStyle {
     #[default]
     Inlined,
     Attached,
     Hidden,
 }
 
-impl TemplateComposeSignatureStyle {
+impl MmlTemplateComposeSignatureStyle {
     pub fn is_inlined(&self) -> bool {
         self == &Self::Inlined
     }
@@ -105,21 +105,21 @@ mod tests {
     use concat_with::concat_line;
 
     use crate::template::{
-        compose::{TemplateBuilderCompose, TemplateComposeSignatureStyle},
-        types::Template,
+        MmlTemplate,
+        compose::{MmlTemplateComposeBuilder, MmlTemplateComposeSignatureStyle},
     };
 
     #[test]
     fn default() {
         assert_eq!(
-            TemplateBuilderCompose {
+            MmlTemplateComposeBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 ..Default::default()
             }
             .build()
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: ",
@@ -135,7 +135,7 @@ mod tests {
     #[test]
     fn with_headers() {
         assert_eq!(
-            TemplateBuilderCompose {
+            MmlTemplateComposeBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 headers: vec![("In-Reply-To".into(), "".into()), ("Cc".into(), "".into())],
@@ -143,7 +143,7 @@ mod tests {
             }
             .build()
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: ",
@@ -161,7 +161,7 @@ mod tests {
     #[test]
     fn with_body() {
         assert_eq!(
-            TemplateBuilderCompose {
+            MmlTemplateComposeBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 body: "Hello, world!".into(),
@@ -169,7 +169,7 @@ mod tests {
             }
             .build()
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: ",
@@ -182,7 +182,7 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderCompose {
+            MmlTemplateComposeBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 body: "\n\nHello\n,\nworld!\n\n!".into(),
@@ -190,7 +190,7 @@ mod tests {
             }
             .build()
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: ",
@@ -212,7 +212,7 @@ mod tests {
     #[test]
     fn with_signature() {
         assert_eq!(
-            TemplateBuilderCompose {
+            MmlTemplateComposeBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
@@ -220,7 +220,7 @@ mod tests {
             }
             .build()
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: ",
@@ -236,16 +236,16 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderCompose {
+            MmlTemplateComposeBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
-                signature_style: TemplateComposeSignatureStyle::Hidden,
+                signature_style: MmlTemplateComposeSignatureStyle::Hidden,
                 ..Default::default()
             }
             .build()
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: ",
@@ -258,16 +258,16 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderCompose {
+            MmlTemplateComposeBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
-                signature_style: TemplateComposeSignatureStyle::Inlined,
+                signature_style: MmlTemplateComposeSignatureStyle::Inlined,
                 ..Default::default()
             }
             .build()
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: ",
@@ -286,7 +286,7 @@ mod tests {
     #[test]
     fn with_body_and_signature() {
         assert_eq!(
-            TemplateBuilderCompose {
+            MmlTemplateComposeBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 body: "Hello, world!".into(),
@@ -295,7 +295,7 @@ mod tests {
             }
             .build()
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: ",
@@ -311,7 +311,7 @@ mod tests {
         );
 
         assert_eq!(
-            TemplateBuilderCompose {
+            MmlTemplateComposeBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 body: "\n\nHello,\n\nworld\n\n!".into(),
@@ -320,7 +320,7 @@ mod tests {
             }
             .build()
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: ",

@@ -11,10 +11,10 @@ use pimalaya_cli::printer::Printer;
 use crate::{
     cli::{
         account::Account,
-        args::{HeaderRawArgs, MessageArg, resolve_signature},
+        args::{HeaderRawArgs, InputArg, resolve_signature},
     },
     template::forward::{
-        TemplateBuilderForward, TemplateForwardPostingStyle, TemplateForwardSignatureStyle,
+        MmlTemplateForwardBuilder, MmlTemplateForwardPostingStyle, MmlTemplateForwardSignatureStyle,
     },
 };
 
@@ -22,7 +22,7 @@ use crate::{
 #[derive(Debug, Parser)]
 pub struct TemplateForwardCommand {
     #[command(flatten)]
-    pub mime: MessageArg,
+    pub input: InputArg,
 
     /// Email address used as the `From:` header. Overrides the
     /// value from `[accounts.<name>]`.
@@ -39,11 +39,11 @@ pub struct TemplateForwardCommand {
     /// How to attach the signature (`inlined`, `attached`,
     /// `hidden`).
     #[arg(short = 'S', long)]
-    pub signature_style: Option<TemplateForwardSignatureStyle>,
+    pub signature_style: Option<MmlTemplateForwardSignatureStyle>,
 
     /// How to attach the forwarded message (`top`, `attached`).
     #[arg(short = 'P', long)]
-    pub posting_style: Option<TemplateForwardPostingStyle>,
+    pub posting_style: Option<MmlTemplateForwardPostingStyle>,
     /// Line printed above the forwarded message. Supports `\n` to
     /// insert a newline.
     #[arg(short = 'Q', long)]
@@ -72,13 +72,13 @@ impl TemplateForwardCommand {
             bail!("Missing `From` email from both config and args");
         };
 
-        let mime = self.mime.parse()?.into_bytes();
+        let mime = self.input.read()?.into_bytes();
 
         let Some(msg) = MessageParser::new().parse(&mime) else {
             bail!("Invalid or malformed MIME message");
         };
 
-        let tpl = TemplateBuilderForward {
+        let tpl = MmlTemplateForwardBuilder {
             signature,
             signature_style: account.forward_signature_style.unwrap_or_default(),
             posting_style: account.forward_posting_style.unwrap_or_default(),

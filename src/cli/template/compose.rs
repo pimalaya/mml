@@ -12,7 +12,7 @@ use crate::{
         account::Account,
         args::{HeaderRawArgs, resolve_signature},
     },
-    template::compose::{TemplateBuilderCompose, TemplateComposeSignatureStyle},
+    template::compose::{MmlTemplateComposeBuilder, MmlTemplateComposeSignatureStyle},
 };
 
 /// Build a new message template, then print it on stdout.
@@ -33,7 +33,7 @@ pub struct TemplateComposeCommand {
     /// How to attach the signature (`inlined`, `attached`,
     /// `hidden`).
     #[arg(long, short = 'S', value_name = "STYLE")]
-    pub signature_style: Option<TemplateComposeSignatureStyle>,
+    pub signature_style: Option<MmlTemplateComposeSignatureStyle>,
 
     #[command(flatten)]
     pub headers: HeaderRawArgs,
@@ -56,7 +56,7 @@ impl TemplateComposeCommand {
             bail!("missing `From` email from both config and args");
         };
 
-        let tpl = TemplateBuilderCompose {
+        let tpl = MmlTemplateComposeBuilder {
             signature,
             signature_style: account.compose_signature_style.unwrap_or_default(),
             from,

@@ -16,9 +16,9 @@ use std::path::PathBuf;
 use crate::{
     cli::config::{AccountConfig, Config},
     template::{
-        compose::TemplateComposeSignatureStyle,
-        forward::{TemplateForwardPostingStyle, TemplateForwardSignatureStyle},
-        reply::{TemplateReplyPostingStyle, TemplateReplySignatureStyle},
+        compose::MmlTemplateComposeSignatureStyle,
+        forward::{MmlTemplateForwardPostingStyle, MmlTemplateForwardSignatureStyle},
+        reply::{MmlTemplateReplyPostingStyle, MmlTemplateReplySignatureStyle},
     },
 };
 
@@ -31,33 +31,49 @@ pub const DEFAULT_SIGNATURE_DELIM: &str = "-- \n";
 /// corresponding `with_*` method.
 #[derive(Clone, Debug, Default)]
 pub struct Account {
+    /// Sender email address, the `From` header body.
     pub from: Option<String>,
+    /// Sender display name paired with the address.
     pub from_name: Option<String>,
-
     /// Raw signature body. Compose with [`Account::signature`] to
     /// get the final delim-prefixed text.
     pub signature: Option<String>,
+    /// Delimiter prefixed to the signature, defaulting to
+    /// [`DEFAULT_SIGNATURE_DELIM`].
     pub signature_delim: Option<String>,
-
-    pub compose_signature_style: Option<TemplateComposeSignatureStyle>,
-
-    pub reply_signature_style: Option<TemplateReplySignatureStyle>,
-    pub reply_posting_style: Option<TemplateReplyPostingStyle>,
+    /// Where the signature sits in a fresh compose draft.
+    pub compose_signature_style: Option<MmlTemplateComposeSignatureStyle>,
+    /// Where the signature sits in a reply draft.
+    pub reply_signature_style: Option<MmlTemplateReplySignatureStyle>,
+    /// Whether the reply quotes above or below the cursor.
+    pub reply_posting_style: Option<MmlTemplateReplyPostingStyle>,
+    /// Headline line introducing the quoted reply body.
     pub reply_quote_headline: Option<String>,
-
-    pub forward_signature_style: Option<TemplateForwardSignatureStyle>,
-    pub forward_posting_style: Option<TemplateForwardPostingStyle>,
+    /// Where the signature sits in a forward draft.
+    pub forward_signature_style: Option<MmlTemplateForwardSignatureStyle>,
+    /// Whether the forward quotes above or below the cursor.
+    pub forward_posting_style: Option<MmlTemplateForwardPostingStyle>,
+    /// Headline line introducing the forwarded body.
     pub forward_quote_headline: Option<String>,
-
+    /// Header names to keep when interpreting, all others dropped.
     pub read_include_headers: Option<Vec<String>>,
+    /// Header names to drop when interpreting, all others kept.
     pub read_exclude_headers: Option<Vec<String>>,
+    /// Part identifiers to keep when interpreting.
     pub read_include_parts: Option<Vec<String>>,
+    /// Part identifiers to drop when interpreting.
     pub read_exclude_parts: Option<Vec<String>>,
+    /// Whether multipart container parts are rendered.
     pub read_show_multiparts: Option<bool>,
+    /// Whether attachments are written to disk.
     pub read_save_attachments: Option<bool>,
+    /// Directory attachments are saved into.
     pub read_save_attachments_dir: Option<PathBuf>,
+    /// Whether attachment parts are hidden from the output.
     pub read_hide_attachments: Option<bool>,
+    /// Whether inline attachment parts are hidden from the output.
     pub read_hide_inline_attachments: Option<bool>,
+    /// Whether the plain-text signature is stripped from the output.
     pub read_hide_plain_texts_signature: Option<bool>,
 }
 
@@ -110,7 +126,7 @@ impl Account {
 
     pub fn with_compose_signature_style(
         mut self,
-        v: Option<TemplateComposeSignatureStyle>,
+        v: Option<MmlTemplateComposeSignatureStyle>,
     ) -> Self {
         if v.is_some() {
             self.compose_signature_style = v;
@@ -118,14 +134,14 @@ impl Account {
         self
     }
 
-    pub fn with_reply_signature_style(mut self, v: Option<TemplateReplySignatureStyle>) -> Self {
+    pub fn with_reply_signature_style(mut self, v: Option<MmlTemplateReplySignatureStyle>) -> Self {
         if v.is_some() {
             self.reply_signature_style = v;
         }
         self
     }
 
-    pub fn with_reply_posting_style(mut self, v: Option<TemplateReplyPostingStyle>) -> Self {
+    pub fn with_reply_posting_style(mut self, v: Option<MmlTemplateReplyPostingStyle>) -> Self {
         if v.is_some() {
             self.reply_posting_style = v;
         }
@@ -141,7 +157,7 @@ impl Account {
 
     pub fn with_forward_signature_style(
         mut self,
-        v: Option<TemplateForwardSignatureStyle>,
+        v: Option<MmlTemplateForwardSignatureStyle>,
     ) -> Self {
         if v.is_some() {
             self.forward_signature_style = v;
@@ -149,7 +165,7 @@ impl Account {
         self
     }
 
-    pub fn with_forward_posting_style(mut self, v: Option<TemplateForwardPostingStyle>) -> Self {
+    pub fn with_forward_posting_style(mut self, v: Option<MmlTemplateForwardPostingStyle>) -> Self {
         if v.is_some() {
             self.forward_posting_style = v;
         }

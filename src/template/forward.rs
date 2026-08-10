@@ -1,4 +1,4 @@
-//! Forward template builder: see [`TemplateBuilderForward`] for
+//! Forward template builder: see [`MmlTemplateForwardBuilder`] for
 //! building a draft forward from a source MIME [`Message`].
 
 use mail_builder::{
@@ -11,8 +11,8 @@ use regex::Regex;
 
 use crate::{
     error::Result,
-    interpreter::message::MimeInterpreterBuilder,
-    template::types::{Template, TemplateBody, TemplateCursor},
+    interpreter::message::MmlMimeInterpreterBuilder,
+    template::{MmlTemplate, MmlTemplateBody, MmlTemplateCursor},
 };
 
 /// Regex used to trim out prefix(es) from a subject.
@@ -30,10 +30,10 @@ fn trim_prefix(subject: &str) -> &str {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct TemplateBuilderForward {
+pub struct MmlTemplateForwardBuilder {
     pub signature: String,
-    pub signature_style: TemplateForwardSignatureStyle,
-    pub posting_style: TemplateForwardPostingStyle,
+    pub signature_style: MmlTemplateForwardSignatureStyle,
+    pub posting_style: MmlTemplateForwardPostingStyle,
     pub quote_headline: String,
     pub from: String,
     pub from_name: Option<String>,
@@ -41,17 +41,21 @@ pub struct TemplateBuilderForward {
     pub body: String,
 }
 
-impl TemplateBuilderForward {
-    pub fn build(self, msg: &Message) -> Result<Template> {
-        let interpreter = MimeInterpreterBuilder::new()
-            // .with_save_attachments_dir(opts.downloads_dir)
-            .with_show_only_headers(["From", "To", "In-Reply-To", "Cc", "Subject"]);
+impl MmlTemplateForwardBuilder {
+    pub fn build(self, msg: &Message) -> Result<MmlTemplate> {
+        let interpreter = MmlMimeInterpreterBuilder::new().with_show_only_headers([
+            "From",
+            "To",
+            "In-Reply-To",
+            "Cc",
+            "Subject",
+        ]);
 
-        let thread_interpreter = MimeInterpreterBuilder::new()
+        let thread_interpreter = MmlMimeInterpreterBuilder::new()
             .with_show_only_headers(["Date", "From", "To", "Cc", "Subject"])
             .with_save_attachments(true);
 
-        let mut cursor = TemplateCursor::default();
+        let mut cursor = MmlTemplateCursor::default();
 
         let mut builder = MessageBuilder::new();
 
@@ -87,7 +91,7 @@ impl TemplateBuilderForward {
         // Body
 
         builder = builder.text_body({
-            let mut body = TemplateBody::new(cursor);
+            let mut body = MmlTemplateBody::new(cursor);
 
             body.push_str(&self.body);
             body.flush();
@@ -123,20 +127,20 @@ impl TemplateBuilderForward {
 
         let content = interpreter.build().from_msg_builder(builder)?;
 
-        Ok(Template::new_with_cursor(content, cursor))
+        Ok(MmlTemplate::new_with_cursor(content, cursor))
     }
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "cli", derive(clap::ValueEnum, serde::Deserialize))]
 #[cfg_attr(feature = "cli", serde(rename_all = "kebab-case"))]
-pub enum TemplateForwardPostingStyle {
+pub enum MmlTemplateForwardPostingStyle {
     #[default]
     Top,
     Attached,
 }
 
-impl TemplateForwardPostingStyle {
+impl MmlTemplateForwardPostingStyle {
     pub fn is_top(&self) -> bool {
         self == &Self::Top
     }
@@ -149,14 +153,14 @@ impl TemplateForwardPostingStyle {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "cli", derive(clap::ValueEnum, serde::Deserialize))]
 #[cfg_attr(feature = "cli", serde(rename_all = "kebab-case"))]
-pub enum TemplateForwardSignatureStyle {
+pub enum MmlTemplateForwardSignatureStyle {
     #[default]
     Inlined,
     Attached,
     Hidden,
 }
 
-impl TemplateForwardSignatureStyle {
+impl MmlTemplateForwardSignatureStyle {
     pub fn is_inlined(&self) -> bool {
         self == &Self::Inlined
     }
@@ -175,7 +179,7 @@ mod tests {
     use concat_with::concat_line;
     use mail_parser::MessageParser;
 
-    use crate::template::{forward::TemplateBuilderForward, types::Template};
+    use crate::template::{MmlTemplate, forward::MmlTemplateForwardBuilder};
 
     #[test]
     fn default() {
@@ -192,7 +196,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderForward {
+            MmlTemplateForwardBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 quote_headline: "-------- Forwarded Message --------\n".into(),
@@ -200,7 +204,7 @@ mod tests {
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: ",
@@ -235,7 +239,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            TemplateBuilderForward {
+            MmlTemplateForwardBuilder {
                 from_name: Some("Me".into()),
                 from: "me@localhost".into(),
                 signature: "-- \nsignature".into(),
@@ -244,7 +248,7 @@ mod tests {
             }
             .build(&msg)
             .unwrap(),
-            Template::new_with_cursor(
+            MmlTemplate::new_with_cursor(
                 concat_line!(
                     "From: Me <me@localhost>",
                     "To: ",

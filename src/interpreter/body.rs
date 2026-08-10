@@ -18,7 +18,7 @@ use crate::grammar::{
 
 /// Filters parts to show by MIME type.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub enum FilterParts {
+pub enum MmlFilterParts {
     /// Show all parts. This filter enables MML markup since multiple
     /// parts with different MIME types can be mixed together, which
     /// can be hard to navigate through.
@@ -42,7 +42,7 @@ pub enum FilterParts {
     Exclude(Vec<String>),
 }
 
-impl FilterParts {
+impl MmlFilterParts {
     pub fn only(&self, that: impl AsRef<str>) -> bool {
         match self {
             Self::All => false,
@@ -67,7 +67,7 @@ impl FilterParts {
 /// The interpreter follows the builder pattern, where the build function
 /// is named `interpret_*`.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MimeBodyInterpreter {
+pub struct MmlMimeBodyInterpreter {
     /// Defines visibility of the multipart markup `<#multipart>`.
     ///
     /// When `true`, multipart markup is visible. This is useful when
@@ -79,8 +79,8 @@ pub struct MimeBodyInterpreter {
     ///
     /// This option shows or hides the multipart markup, not their
     /// content. The content is always shown. To filter parts with
-    /// their content, see [`MimeBodyInterpreter::filter_parts`] and
-    /// [`FilterParts`].
+    /// their content, see [`MmlMimeBodyInterpreter::filter_parts`] and
+    /// [`MmlFilterParts`].
     show_multiparts: bool,
 
     /// Defines visibility of the part markup `<#part>`.
@@ -94,8 +94,8 @@ pub struct MimeBodyInterpreter {
     ///
     /// This option shows or hides the part markup, not their
     /// content. The content is always shown. To filter parts with
-    /// their content, see [`MimeBodyInterpreter::filter_parts`] and
-    /// [`FilterParts`].
+    /// their content, see [`MmlMimeBodyInterpreter::filter_parts`] and
+    /// [`MmlFilterParts`].
     show_parts: bool,
 
     /// Defines visibility of the part markup `<#part
@@ -119,7 +119,7 @@ pub struct MimeBodyInterpreter {
     /// [`Self::show_multiparts`], [`Self::show_parts`],
     /// [`Self::show_attachments`] and
     /// [`Self::show_inline_attachments`].
-    filter_parts: FilterParts,
+    filter_parts: MmlFilterParts,
 
     /// Defines visibility of signatures in `text/plain` parts.
     ///
@@ -146,7 +146,7 @@ pub struct MimeBodyInterpreter {
     save_attachments_dir: PathBuf,
 }
 
-impl Default for MimeBodyInterpreter {
+impl Default for MmlMimeBodyInterpreter {
     fn default() -> Self {
         Self {
             show_multiparts: false,
@@ -161,7 +161,7 @@ impl Default for MimeBodyInterpreter {
     }
 }
 
-impl MimeBodyInterpreter {
+impl MmlMimeBodyInterpreter {
     pub fn default_save_attachments_dir() -> PathBuf {
         env::temp_dir()
     }
@@ -180,7 +180,7 @@ impl MimeBodyInterpreter {
         self
     }
 
-    pub fn with_filter_parts(mut self, filter: FilterParts) -> Self {
+    pub fn with_filter_parts(mut self, filter: MmlFilterParts) -> Self {
         self.filter_parts = filter;
         self
     }
@@ -360,7 +360,7 @@ impl MimeBodyInterpreter {
                 let mut parts = ids.iter().filter_map(|id| msg.part(*id));
 
                 let part = match &self.filter_parts {
-                    FilterParts::All => {
+                    MmlFilterParts::All => {
                         let part = parts
                             .clone()
                             .find_map(|part| match &part.body {
@@ -399,7 +399,7 @@ impl MimeBodyInterpreter {
                             },
                         }
                     }
-                    FilterParts::Only(ctype) => {
+                    MmlFilterParts::Only(ctype) => {
                         match parts
                             .clone()
                             .find(|part| get_ctype(part).starts_with(ctype))
@@ -408,13 +408,13 @@ impl MimeBodyInterpreter {
                             None => None,
                         }
                     }
-                    FilterParts::Include(ctypes) => {
+                    MmlFilterParts::Include(ctypes) => {
                         match parts.clone().find(|part| ctypes.contains(&get_ctype(part))) {
                             Some(part) => Some(self.interpret_part(msg, part)),
                             None => None,
                         }
                     }
-                    FilterParts::Exclude(ctypes) => {
+                    MmlFilterParts::Exclude(ctypes) => {
                         match parts
                             .clone()
                             .find(|part| !ctypes.contains(&get_ctype(part)))
@@ -498,7 +498,7 @@ mod tests {
     use concat_with::concat_line;
     use mail_builder::{MessageBuilder, mime::MimePart};
 
-    use super::{FilterParts, MimeBodyInterpreter};
+    use super::{MmlFilterParts, MmlMimeBodyInterpreter};
 
     #[test]
     fn nested_multiparts() {
@@ -516,7 +516,7 @@ mod tests {
             ],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
+        let tpl = MmlMimeBodyInterpreter::new()
             .interpret_msg_builder(builder.clone())
             .unwrap();
 
@@ -550,7 +550,7 @@ mod tests {
             ],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
+        let tpl = MmlMimeBodyInterpreter::new()
             .with_show_multiparts(true)
             .interpret_msg_builder(builder.clone())
             .unwrap();
@@ -583,7 +583,7 @@ mod tests {
             ],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
+        let tpl = MmlMimeBodyInterpreter::new()
             .interpret_msg_builder(builder.clone())
             .unwrap();
 
@@ -617,8 +617,8 @@ mod tests {
             ],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
-            .with_filter_parts(FilterParts::Only("text/plain".into()))
+        let tpl = MmlMimeBodyInterpreter::new()
+            .with_filter_parts(MmlFilterParts::Only("text/plain".into()))
             .interpret_msg_builder(builder.clone())
             .unwrap();
 
@@ -641,8 +641,8 @@ mod tests {
             ],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
-            .with_filter_parts(FilterParts::Only("text/html".into()))
+        let tpl = MmlMimeBodyInterpreter::new()
+            .with_filter_parts(MmlFilterParts::Only("text/html".into()))
             .interpret_msg_builder(builder.clone())
             .unwrap();
 
@@ -665,8 +665,8 @@ mod tests {
             ],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
-            .with_filter_parts(FilterParts::Only("text/json".into()))
+        let tpl = MmlMimeBodyInterpreter::new()
+            .with_filter_parts(MmlFilterParts::Only("text/json".into()))
             .interpret_msg_builder(builder.clone())
             .unwrap();
 
@@ -685,7 +685,7 @@ mod tests {
             ],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
+        let tpl = MmlMimeBodyInterpreter::new()
             .interpret_msg_builder(builder.clone())
             .unwrap();
 
@@ -711,7 +711,7 @@ mod tests {
             ],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
+        let tpl = MmlMimeBodyInterpreter::new()
             .interpret_msg_builder(builder.clone())
             .unwrap();
 
@@ -736,7 +736,7 @@ mod tests {
             )],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
+        let tpl = MmlMimeBodyInterpreter::new()
             .interpret_msg_builder(builder.clone())
             .unwrap();
 
@@ -764,7 +764,7 @@ mod tests {
             ],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
+        let tpl = MmlMimeBodyInterpreter::new()
             .interpret_msg_builder(builder.clone())
             .unwrap();
 
@@ -787,8 +787,8 @@ mod tests {
             ],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
-            .with_filter_parts(FilterParts::Only("text/html".into()))
+        let tpl = MmlMimeBodyInterpreter::new()
+            .with_filter_parts(MmlFilterParts::Only("text/html".into()))
             .interpret_msg_builder(builder.clone())
             .unwrap();
 
@@ -805,7 +805,7 @@ mod tests {
             "Hello, world!".as_bytes(),
         );
 
-        let tpl = MimeBodyInterpreter::new()
+        let tpl = MmlMimeBodyInterpreter::new()
             .with_save_attachments_dir("~/Downloads")
             .interpret_msg_builder(builder)
             .unwrap();
@@ -825,7 +825,7 @@ mod tests {
             "<h1>This is a &lt;HTML&gt; text part.</h1>\n",
         ));
 
-        let tpl = MimeBodyInterpreter::new()
+        let tpl = MmlMimeBodyInterpreter::new()
             .with_show_parts(false)
             .interpret_msg_builder(builder.clone())
             .unwrap();
@@ -846,9 +846,9 @@ mod tests {
             ],
         ));
 
-        let tpl = MimeBodyInterpreter::new()
+        let tpl = MmlMimeBodyInterpreter::new()
             .with_show_parts(false)
-            .with_filter_parts(FilterParts::Include(vec![
+            .with_filter_parts(MmlFilterParts::Include(vec![
                 "text/plain".into(),
                 "text/html".into(),
             ]))

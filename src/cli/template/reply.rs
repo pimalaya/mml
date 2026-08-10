@@ -11,10 +11,10 @@ use pimalaya_cli::printer::Printer;
 use crate::{
     cli::{
         account::Account,
-        args::{HeaderRawArgs, MessageArg, resolve_signature},
+        args::{HeaderRawArgs, InputArg, resolve_signature},
     },
     template::reply::{
-        TemplateBuilderReply, TemplateReplyPostingStyle, TemplateReplySignatureStyle,
+        MmlTemplateReplyBuilder, MmlTemplateReplyPostingStyle, MmlTemplateReplySignatureStyle,
     },
 };
 
@@ -22,7 +22,7 @@ use crate::{
 #[derive(Debug, Parser)]
 pub struct TemplateReplyCommand {
     #[command(flatten)]
-    pub mime: MessageArg,
+    pub input: InputArg,
 
     /// Reply to every recipient of the source message (Cc included).
     /// CLI-only, no config equivalent.
@@ -44,12 +44,12 @@ pub struct TemplateReplyCommand {
     /// How to attach the signature (`above-quote`, `below-quote`,
     /// `attached`, `hidden`).
     #[arg(long, short = 'S')]
-    pub signature_style: Option<TemplateReplySignatureStyle>,
+    pub signature_style: Option<MmlTemplateReplySignatureStyle>,
 
     /// Where to place the reply relative to the quoted thread
     /// (`top`, `bottom`, `interleaved`).
     #[arg(long, short = 'P')]
-    pub posting_style: Option<TemplateReplyPostingStyle>,
+    pub posting_style: Option<MmlTemplateReplyPostingStyle>,
     /// Line printed above the quoted thread. Supports `\n` to insert
     /// a newline.
     #[arg(long, short = 'Q')]
@@ -78,13 +78,13 @@ impl TemplateReplyCommand {
             bail!("Missing `From` email from both config and args");
         };
 
-        let mime = self.mime.parse()?.into_bytes();
+        let mime = self.input.read()?.into_bytes();
 
         let Some(msg) = MessageParser::new().parse(&mime) else {
             bail!("Invalid or malformed MIME message");
         };
 
-        let tpl = TemplateBuilderReply {
+        let tpl = MmlTemplateReplyBuilder {
             reply_all: self.reply_all,
             signature,
             signature_style: account.reply_signature_style.unwrap_or_default(),
