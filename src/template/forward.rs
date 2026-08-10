@@ -11,7 +11,10 @@ use regex::Regex;
 
 use crate::{
     error::Result,
-    interpreter::message::MmlMimeInterpreterBuilder,
+    interpreter::{
+        body::MmlMimeBodyInterpreter,
+        message::{MmlFilterHeaders, MmlMimeInterpreter},
+    },
     template::{MmlTemplate, MmlTemplateBody, MmlTemplateCursor},
 };
 
@@ -43,17 +46,18 @@ pub struct MmlTemplateForwardBuilder {
 
 impl MmlTemplateForwardBuilder {
     pub fn build(self, msg: &Message) -> Result<MmlTemplate> {
-        let interpreter = MmlMimeInterpreterBuilder::new().with_show_only_headers([
-            "From",
-            "To",
-            "In-Reply-To",
-            "Cc",
-            "Subject",
-        ]);
+        let interpreter = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::include(["From", "To", "In-Reply-To", "Cc", "Subject"]),
+            ..Default::default()
+        };
 
-        let thread_interpreter = MmlMimeInterpreterBuilder::new()
-            .with_show_only_headers(["Date", "From", "To", "Cc", "Subject"])
-            .with_save_attachments(true);
+        let thread_interpreter = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::include(["Date", "From", "To", "Cc", "Subject"]),
+            body: MmlMimeBodyInterpreter {
+                save_attachments: true,
+                ..Default::default()
+            },
+        };
 
         let mut cursor = MmlTemplateCursor::default();
 
@@ -104,7 +108,7 @@ impl MmlTemplateForwardBuilder {
 
             if self.posting_style.is_top() {
                 body.push_str(&self.quote_headline);
-                body.push_str(thread_interpreter.build().from_msg(msg)?.trim());
+                body.push_str(thread_interpreter.interpret_msg(msg)?.trim());
                 body.flush()
             }
 
@@ -125,7 +129,7 @@ impl MmlTemplateForwardBuilder {
             )
         }
 
-        let content = interpreter.build().from_msg_builder(builder)?;
+        let content = interpreter.interpret_builder(builder)?;
 
         Ok(MmlTemplate::new_with_cursor(content, cursor))
     }

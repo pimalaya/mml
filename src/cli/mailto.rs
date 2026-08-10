@@ -38,6 +38,8 @@ pub struct MailtoCommand {
 }
 
 impl MailtoCommand {
+    /// Opens the editor on the draft, then prints the compiled MIME
+    /// message.
     pub fn execute(
         self,
         printer: &mut impl Printer,
@@ -148,7 +150,7 @@ fn header_case(key: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_uri;
+    use crate::cli::mailto::parse_uri;
 
     #[test]
     fn recipients_from_path_and_query() {

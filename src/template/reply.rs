@@ -13,7 +13,10 @@ use regex::Regex;
 
 use crate::{
     error::Result,
-    interpreter::{body::MmlFilterParts, message::MmlMimeInterpreterBuilder},
+    interpreter::{
+        body::{MmlFilterParts, MmlMimeBodyInterpreter},
+        message::{MmlFilterHeaders, MmlMimeInterpreter},
+    },
     template::{MmlTemplate, MmlTemplateBody, MmlTemplateCursor, address},
 };
 
@@ -46,24 +49,25 @@ pub struct MmlTemplateReplyBuilder {
 
 impl MmlTemplateReplyBuilder {
     pub fn build(self, msg: &Message) -> Result<MmlTemplate> {
-        let interpreter = MmlMimeInterpreterBuilder::new().with_show_only_headers([
-            "From",
-            "To",
-            "In-Reply-To",
-            "Cc",
-            "Subject",
-        ]);
+        let interpreter = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::include(["From", "To", "In-Reply-To", "Cc", "Subject"]),
+            ..Default::default()
+        };
 
-        let thread_interpreter = MmlMimeInterpreterBuilder::new()
-            .with_hide_all_headers()
-            .with_show_parts(false)
-            .with_show_attachments(false)
-            .with_show_inline_attachments(false)
-            .with_show_plain_texts_signature(false)
-            .with_filter_parts(MmlFilterParts::Include(vec![
-                "text/plain".into(),
-                "text/html".into(),
-            ]));
+        let thread_interpreter = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::Include(Vec::new()),
+            body: MmlMimeBodyInterpreter {
+                show_parts: false,
+                show_attachments: false,
+                show_inline_attachments: false,
+                show_plain_texts_signature: false,
+                filter_parts: MmlFilterParts::Include(vec![
+                    "text/plain".into(),
+                    "text/html".into(),
+                ]),
+                ..Default::default()
+            },
+        };
 
         let mut cursor = MmlTemplateCursor::default();
         let mut builder = MessageBuilder::new();
@@ -153,7 +157,7 @@ impl MmlTemplateReplyBuilder {
         builder = builder.text_body({
             let mut body = MmlTemplateBody::new(cursor);
 
-            let reply_body = thread_interpreter.build().from_msg(msg)?;
+            let reply_body = thread_interpreter.interpret_msg(msg)?;
             let reply_body = reply_body.trim();
 
             if !reply_body.is_empty() && self.posting_style.is_bottom() {
@@ -239,7 +243,7 @@ impl MmlTemplateReplyBuilder {
             builder = builder.attachment("text/plain", "signature.txt", &self.signature)
         }
 
-        let content = interpreter.build().from_msg_builder(builder)?;
+        let content = interpreter.interpret_builder(builder)?;
 
         Ok(MmlTemplate::new_with_cursor(content, cursor))
     }

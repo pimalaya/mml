@@ -1,3 +1,9 @@
+//! `mml` binary entry point.
+//!
+//! Parses the CLI, opens the printer sink named by `--output`, loads
+//! the TOML config, then hands over to [`mml::cli::Command::execute`].
+//! The library architecture lives in the src/lib.rs header.
+
 use anyhow::Result;
 use clap::Parser;
 use pimalaya_cli::{error::ErrorReport, log::Logger};

@@ -8,7 +8,10 @@ use mail_builder::{
 
 use crate::{
     error::Result,
-    interpreter::message::MmlMimeInterpreterBuilder,
+    interpreter::{
+        body::MmlMimeBodyInterpreter,
+        message::{MmlFilterHeaders, MmlMimeInterpreter},
+    },
     template::{MmlTemplate, MmlTemplateBody, MmlTemplateCursor},
 };
 
@@ -24,10 +27,17 @@ pub struct MmlTemplateComposeBuilder {
 
 impl MmlTemplateComposeBuilder {
     pub fn build(self) -> Result<MmlTemplate> {
-        let interpreter = MmlMimeInterpreterBuilder::new()
-            .with_show_only_headers(["From", "To", "In-Reply-To", "Cc", "Subject"])
-            .with_show_additional_headers(self.headers.iter().map(|(h, _)| h))
-            .with_save_attachments(true);
+        let mut show_headers =
+            MmlFilterHeaders::include(["From", "To", "In-Reply-To", "Cc", "Subject"]);
+        show_headers.extend(self.headers.iter().map(|(header, _)| header));
+
+        let interpreter = MmlMimeInterpreter {
+            show_headers,
+            body: MmlMimeBodyInterpreter {
+                save_attachments: true,
+                ..Default::default()
+            },
+        };
 
         let mut msg = MessageBuilder::default();
         let mut cursor = MmlTemplateCursor::default();
@@ -70,7 +80,7 @@ impl MmlTemplateComposeBuilder {
             msg = msg.attachment("application/octet-stream", "signature", self.signature)
         }
 
-        let content = interpreter.build().from_msg_builder(msg)?;
+        let content = interpreter.interpret_builder(msg)?;
 
         Ok(MmlTemplate::new_with_cursor(content, cursor))
     }

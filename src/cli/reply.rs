@@ -54,6 +54,8 @@ pub struct ReplyCommand {
 }
 
 impl ReplyCommand {
+    /// Opens the editor on the draft, then prints the compiled MIME
+    /// message.
     pub fn execute(
         self,
         printer: &mut impl Printer,

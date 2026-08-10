@@ -47,6 +47,8 @@ pub struct ForwardCommand {
 }
 
 impl ForwardCommand {
+    /// Opens the editor on the draft, then prints the compiled MIME
+    /// message.
     pub fn execute(
         self,
         printer: &mut impl Printer,

@@ -1,123 +1,51 @@
 //! MML → MIME message compilation: parses MML headers + body, hands
 //! the body off to [`crate::compiler::body`], stitches the result
-//! into a [`mail_builder::MessageBuilder`].
+//! into MIME bytes.
 
-use mail_builder::{MessageBuilder, headers::text::Text};
-use mail_parser::{Message, MessageParser};
+use mail_builder::headers::text::Text;
+use mail_parser::MessageParser;
 
 use crate::{
     compiler::body::MmlBodyCompiler,
     error::{MmlError, Result},
 };
-
-/// MML → MIME message compiler builder.
-///
-/// The compiler follows the builder pattern, where the build function
-/// is named `compile`.
+/// MML → MIME message compiler.
 #[derive(Clone, Debug, Default)]
-pub struct MmlCompilerBuilder {
-    /// The internal MML to MIME message body compiler.
-    mml_body_compiler: MmlBodyCompiler,
+pub struct MmlCompiler {
+    /// The body-level compiler, carrying the part options.
+    pub body: MmlBodyCompiler,
 }
 
-impl MmlCompilerBuilder {
-    /// Create a new compiler builder with default options.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Build the final [MmlCompiler] based on the defined options.
-    pub fn build(self, mml_msg: &str) -> Result<MmlCompiler<'_>> {
+impl MmlCompiler {
+    /// Compiles an MML message into MIME bytes.
+    ///
+    /// Headers are copied over verbatim from the MML source, with a
+    /// `MIME-Version` added.
+    pub fn compile(&self, mml: &str) -> Result<Vec<u8>> {
         let mml_msg = MessageParser::new()
-            .parse(mml_msg.as_bytes())
+            .parse(mml.as_bytes())
             .ok_or(MmlError::ParseMessageError)?;
 
-        let mml_body_compiler = self.mml_body_compiler;
-
-        Ok(MmlCompiler {
-            mml_msg,
-            mml_body_compiler,
-        })
-    }
-}
-
-/// MML → MIME message compiler.
-///
-/// This structure allows users to choose the final form of the
-/// desired MIME message: [MessageBuilder], [Vec], [String] etc.
-#[derive(Clone, Debug, Default)]
-pub struct MmlCompiler<'a> {
-    mml_msg: Message<'a>,
-    mml_body_compiler: MmlBodyCompiler,
-}
-
-impl MmlCompiler<'_> {
-    /// Compile the inner MML message into a [MmlCompileResult].
-    ///
-    /// The fact to return a intermediate structure allows users to
-    /// customize the final form of the desired MIME message.
-    pub fn compile(&self) -> Result<MmlCompileResult<'_>> {
-        let mml_body = self
-            .mml_msg
+        let mml_body = mml_msg
             .text_bodies()
             .next()
             .ok_or(MmlError::ParseMmlEmptyBodyError)?
             .text_contents()
             .ok_or(MmlError::ParseMmlEmptyBodyContentError)?;
 
-        let mml_body_compiler = &self.mml_body_compiler;
+        let mut mime_msg = self.body.compile(mml_body)?;
 
-        let mut mime_msg_builder = mml_body_compiler.compile(mml_body)?;
+        mime_msg = mime_msg.header("MIME-Version", Text::new("1.0"));
 
-        mime_msg_builder = mime_msg_builder.header("MIME-Version", Text::new("1.0"));
-
-        for header in self.mml_msg.headers() {
+        for header in mml_msg.headers() {
             let key = header.name.as_str();
             let val = crate::header::to_builder_val(header);
-            mime_msg_builder = mime_msg_builder.header(key, val);
+            mime_msg = mime_msg.header(key, val);
         }
 
-        Ok(MmlCompileResult { mime_msg_builder })
-    }
-}
-
-/// MML → MIME message compilation result.
-///
-/// This structure allows users to choose the final form of the
-/// desired MIME message: [MessageBuilder], [Vec], [String] etc.
-#[derive(Clone, Debug, Default)]
-pub struct MmlCompileResult<'a> {
-    mime_msg_builder: MessageBuilder<'a>,
-}
-
-impl<'a> MmlCompileResult<'a> {
-    /// Return a reference to the final MIME message builder.
-    pub fn as_msg_builder(&self) -> &MessageBuilder<'_> {
-        &self.mime_msg_builder
-    }
-
-    /// Return a copy of the final MIME message builder.
-    pub fn to_msg_builder(&self) -> MessageBuilder<'_> {
-        self.mime_msg_builder.clone()
-    }
-
-    /// Return the final MIME message builder.
-    pub fn into_msg_builder(self) -> MessageBuilder<'a> {
-        self.mime_msg_builder
-    }
-
-    /// Return the final MIME message as a [Vec].
-    pub fn into_vec(self) -> Result<Vec<u8>> {
-        self.mime_msg_builder
+        mime_msg
             .write_to_vec()
             .map_err(MmlError::CompileMmlMessageToVecError)
-    }
-
-    /// Return the final MIME message as a [String].
-    pub fn into_string(self) -> Result<String> {
-        self.mime_msg_builder
-            .write_to_string()
-            .map_err(MmlError::CompileMmlMessageToStringError)
     }
 }
 
@@ -126,7 +54,8 @@ mod tests {
     use concat_with::concat_line;
 
     use crate::{
-        compiler::message::MmlCompilerBuilder, interpreter::message::MmlMimeInterpreterBuilder,
+        compiler::message::MmlCompiler,
+        interpreter::message::{MmlFilterHeaders, MmlMimeInterpreter},
     };
 
     #[test]
@@ -142,14 +71,14 @@ mod tests {
             "",
         );
 
-        let mml_compiler = MmlCompilerBuilder::new().build(mml).unwrap();
-        let mime_msg_builder = mml_compiler.compile().unwrap().into_msg_builder();
+        let mime = MmlCompiler::default().compile(mml).unwrap();
 
-        let mml_msg = MmlMimeInterpreterBuilder::new()
-            .with_show_only_headers(["From", "To", "Subject"])
-            .build()
-            .from_msg_builder(mime_msg_builder)
-            .unwrap();
+        let mml_msg = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::include(["From", "To", "Subject"]),
+            ..Default::default()
+        }
+        .interpret(&mime)
+        .unwrap();
 
         let expected_mml_msg = concat_line!(
             "From: Frȯm <from@localhost>",
@@ -176,14 +105,14 @@ mod tests {
             "",
         );
 
-        let mml_compiler = MmlCompilerBuilder::new().build(mml).unwrap();
-        let mime_msg_builder = mml_compiler.compile().unwrap().into_msg_builder();
+        let mime = MmlCompiler::default().compile(mml).unwrap();
 
-        let mml_msg = MmlMimeInterpreterBuilder::new()
-            .with_show_only_headers(["Message-ID"])
-            .build()
-            .from_msg_builder(mime_msg_builder)
-            .unwrap();
+        let mml_msg = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::include(["Message-ID"]),
+            ..Default::default()
+        }
+        .interpret(&mime)
+        .unwrap();
 
         let expected_mml_msg = concat_line!(
             "Message-ID: <bfb64e12-b7d4-474c-a658-8a221365f8ca@localhost>",
@@ -208,14 +137,14 @@ mod tests {
             "",
         );
 
-        let mml_compiler = MmlCompilerBuilder::new().build(mml).unwrap();
-        let mime_msg_builder = mml_compiler.compile().unwrap().into_msg_builder();
+        let mime = MmlCompiler::default().compile(mml).unwrap();
 
-        let mml_msg = MmlMimeInterpreterBuilder::new()
-            .with_show_only_headers(["Message-ID"])
-            .build()
-            .from_msg_builder(mime_msg_builder)
-            .unwrap();
+        let mml_msg = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::include(["Message-ID"]),
+            ..Default::default()
+        }
+        .interpret(&mime)
+        .unwrap();
 
         let expected_mml_msg = concat_line!(
             "Message-ID: <bfb64e12-b7d4-474c-a658-8a221365f8ca@localhost>",
@@ -240,16 +169,15 @@ mod tests {
             "",
         );
 
-        let mml_compiler = MmlCompilerBuilder::new().build(mml).unwrap();
-        let compile_mml_res = mml_compiler.compile().unwrap();
-        let mime_msg_builder = compile_mml_res.clone().into_msg_builder();
-        let mime_msg_str = compile_mml_res.into_string().unwrap();
+        let mime = MmlCompiler::default().compile(mml).unwrap();
+        let mime_msg_str = String::from_utf8(mime.clone()).unwrap();
 
-        let mml_msg = MmlMimeInterpreterBuilder::new()
-            .with_show_only_headers(["From", "To", "Subject"])
-            .build()
-            .from_msg_builder(mime_msg_builder)
-            .unwrap();
+        let mml_msg = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::include(["From", "To", "Subject"]),
+            ..Default::default()
+        }
+        .interpret(&mime)
+        .unwrap();
 
         let expected_mml_msg = concat_line!(
             "From: from@localhost",

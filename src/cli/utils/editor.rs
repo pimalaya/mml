@@ -20,7 +20,7 @@ use edit::Builder as EditBuilder;
 
 use crate::{
     cli::utils::choice::{PostEditChoice, post_edit},
-    compiler::message::MmlCompilerBuilder,
+    compiler::message::MmlCompiler,
     error::MmlError,
     template::MmlTemplate,
 };
@@ -72,12 +72,8 @@ pub fn edit_loop(initial: MmlTemplate, has_output_path: bool) -> Result<Option<V
 }
 
 fn compile_buffer(buffer: &str) -> Result<Vec<u8>> {
-    let compiler = MmlCompilerBuilder::new()
-        .build(buffer)
-        .context("cannot build MML compiler")?;
-
-    match compiler.compile() {
-        Ok(res) => Ok(res.into_vec()?),
+    match MmlCompiler::default().compile(buffer) {
+        Ok(mime) => Ok(mime),
         Err(MmlError::ParseMmlError(errs, body)) => {
             for err in &errs {
                 Report::build(ReportKind::Error, err.span().into_range())

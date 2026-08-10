@@ -105,6 +105,7 @@ pub enum Command {
 }
 
 impl Command {
+    /// Merges the account config, then routes to the subcommand.
     pub fn execute(
         self,
         printer: &mut impl Printer,

@@ -28,11 +28,6 @@ use crate::{
 pub struct MmlBodyCompiler {}
 
 impl<'a> MmlBodyCompiler {
-    /// Create a new MML message body compiler with default options.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Replace escaped opening and closing tags by normal opening and
     /// closing tags.
     fn unescape_mml_markup(text: impl AsRef<str>) -> String {
@@ -189,13 +184,13 @@ mod tests {
     use concat_with::concat_line;
     use tempfile::Builder;
 
-    use super::MmlBodyCompiler;
+    use crate::compiler::body::MmlBodyCompiler;
 
     #[test]
     fn plain() {
         let mml_body = concat_line!("Hello, world!", "");
 
-        let msg = MmlBodyCompiler::new()
+        let msg = MmlBodyCompiler::default()
             .compile(mml_body)
             .unwrap()
             .message_id("id@localhost")
@@ -225,7 +220,7 @@ mod tests {
             "<#/part>",
         );
 
-        let msg = MmlBodyCompiler::new()
+        let msg = MmlBodyCompiler::default()
             .compile(mml_body)
             .unwrap()
             .message_id("id@localhost")
@@ -258,7 +253,7 @@ mod tests {
             "<#part filename={attachment_path} type=text/plain name=custom recipient-filename=/tmp/custom encoding=base64>discarded body<#/part>"
         );
 
-        let msg = MmlBodyCompiler::new()
+        let msg = MmlBodyCompiler::default()
             .compile(&mml_body)
             .unwrap()
             .message_id("id@localhost")

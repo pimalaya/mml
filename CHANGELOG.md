@@ -21,7 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Renamed every public library item to carry the `Mml` domain prefix, per the Pimalaya naming guidelines: `Template` became `MmlTemplate`, `TemplateCursor` became `MmlTemplateCursor`, `TemplateBody` became `MmlTemplateBody`, `TemplateBuilderCompose` became `MmlTemplateComposeBuilder` (same for reply and forward), the `Template*Style` enums gained the prefix, `MimeInterpreter` became `MmlMimeInterpreter`, `MimeInterpreterBuilder` became `MmlMimeInterpreterBuilder`, `MimeBodyInterpreter` became `MmlMimeBodyInterpreter`, and `FilterHeaders` / `FilterParts` became `MmlFilterHeaders` / `MmlFilterParts`.
+- Collapsed the compiler into a single `MmlCompiler` with public fields and one `compile` method returning MIME bytes, replacing the `MmlCompilerBuilder` / `MmlCompiler` / `MmlCompileResult` chain and its `into_vec` / `into_string` / `*_msg_builder` accessors.
+
+  `MmlCompilerBuilder::new().build(&mml)?.compile()?.into_vec()?` becomes `MmlCompiler::default().compile(&mml)?`. The builder carried no options at all, so the three types were pure ceremony.
+
+- Collapsed the interpreter the same way. `MmlMimeInterpreterBuilder` is gone, and `MmlMimeInterpreter` exposes `show_headers` plus a `body` of public options, built with a struct literal and `..Default::default()`. The 22 `with_*` setters and the `build` step went with it, and the three `from_*` entry points became `interpret`, `interpret_builder` and `interpret_msg`.
+
+  The setters that carried logic moved onto the filter: `with_show_only_headers` is `MmlFilterHeaders::include` (still deduplicating), and `with_show_additional_headers` is `MmlFilterHeaders::extend`. `with_show_all_headers`, `with_hide_all_headers` and `with_save_some_attachments_dir` become plain values (`All`, `Include(Vec::new())`, and an `unwrap_or_else` at the call site).
+
+- Shared `--from`, `--from-name` and `--signature` across the seven commands building a template, so their help text and behaviour no longer drift. `templates compose` and `templates forward` lose their custom `<EMAIL>` and `<NAME>` value names in favour of the common ones.
+
+- Renamed every public library item to carry the `Mml` domain prefix, per the Pimalaya naming guidelines: `Template` became `MmlTemplate`, `TemplateCursor` became `MmlTemplateCursor`, `TemplateBody` became `MmlTemplateBody`, `TemplateBuilderCompose` became `MmlTemplateComposeBuilder` (same for reply and forward), the `Template*Style` enums gained the prefix, `MimeInterpreter` became `MmlMimeInterpreter`, `MimeBodyInterpreter` became `MmlMimeBodyInterpreter`, and `FilterHeaders` / `FilterParts` became `MmlFilterHeaders` / `MmlFilterParts`.
 
 - Moved the shared template types out of the `template::types` catch-all module and up into `template`, so they are reached as `mml::template::MmlTemplate` instead of `mml::template::types::Template`.
 

@@ -2,15 +2,13 @@
 //! off to [`crate::interpreter::body`], returns the rendered MML as a
 //! [`String`].
 
-use std::path::PathBuf;
-
 use mail_builder::MessageBuilder;
-use mail_parser::{Message, MessageParser};
+use mail_parser::{HeaderValue, Message, MessageParser};
 
 use crate::{
     error::{MmlError, Result},
     header,
-    interpreter::body::{MmlFilterParts, MmlMimeBodyInterpreter},
+    interpreter::body::MmlMimeBodyInterpreter,
 };
 
 /// Filters headers to show in the interpreted message.
@@ -19,15 +17,24 @@ pub enum MmlFilterHeaders {
     /// Include all available headers to the interpreted message.
     #[default]
     All,
-
     /// Include given headers to the interpreted message.
     Include(Vec<String>),
-
     /// Exclude given headers from the interpreted message.
     Exclude(Vec<String>),
 }
 
 impl MmlFilterHeaders {
+    /// Includes the given headers, dropping duplicates.
+    pub fn include(headers: impl IntoIterator<Item = impl ToString>) -> Self {
+        Self::Include(dedup(headers))
+    }
+
+    /// Excludes the given headers, dropping duplicates.
+    pub fn exclude(headers: impl IntoIterator<Item = impl ToString>) -> Self {
+        Self::Exclude(dedup(headers))
+    }
+
+    /// Whether the given header is already covered by this filter.
     pub fn contains(&self, header: &String) -> bool {
         match self {
             Self::All => false,
@@ -35,229 +42,96 @@ impl MmlFilterHeaders {
             Self::Exclude(headers) => !headers.contains(header),
         }
     }
-}
 
-/// MIME → MML message interpreter builder.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct MmlMimeInterpreterBuilder {
-    /// The strategy to display headers.
-    show_headers: MmlFilterHeaders,
-
-    /// The internal MIME to MML message body interpreter.
-    mime_body_interpreter: MmlMimeBodyInterpreter,
-}
-
-impl MmlMimeInterpreterBuilder {
-    /// Create a new interpreter builder with default options.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Filter headers with the given strategy.
-    pub fn with_show_headers(mut self, s: MmlFilterHeaders) -> Self {
-        self.show_headers = s;
-        self
-    }
-
-    /// Show all headers.
-    pub fn with_show_all_headers(mut self) -> Self {
-        self.show_headers = MmlFilterHeaders::All;
-        self
-    }
-
-    /// Show only headers matching the given ones.
-    pub fn with_show_only_headers(
-        mut self,
-        headers: impl IntoIterator<Item = impl ToString>,
-    ) -> Self {
-        let headers = headers.into_iter().fold(Vec::new(), |mut headers, header| {
-            let header = header.to_string();
-            if !headers.contains(&header) {
-                headers.push(header)
-            }
-            headers
-        });
-        self.show_headers = MmlFilterHeaders::Include(headers);
-        self
-    }
-
-    /// Show additional headers.
-    // FIXME: seems not to work as expected, maybe need to use a
-    // different structure than [MmlFilterHeaders].
-    pub fn with_show_additional_headers(
-        mut self,
-        headers: impl IntoIterator<Item = impl ToString>,
-    ) -> Self {
-        let next_headers = headers.into_iter().fold(Vec::new(), |mut headers, header| {
-            let header = header.to_string();
-            if !headers.contains(&header) && !self.show_headers.contains(&header) {
-                headers.push(header)
-            }
-            headers
-        });
-
-        match &mut self.show_headers {
-            MmlFilterHeaders::All => {
-                // FIXME: this excludes all previous headers, needs to
-                // be separated.
-                self.show_headers = MmlFilterHeaders::Include(next_headers);
-            }
-            MmlFilterHeaders::Include(headers) => {
-                headers.extend(next_headers);
-            }
-            MmlFilterHeaders::Exclude(headers) => {
-                headers.extend(next_headers);
-            }
-        };
-
-        self
-    }
-
-    /// Hide all headers.
-    pub fn with_hide_all_headers(mut self) -> Self {
-        self.show_headers = MmlFilterHeaders::Include(Vec::new());
-        self
-    }
-
-    /// Show MML multipart tags.
-    pub fn with_show_multiparts(mut self, b: bool) -> Self {
-        self.mime_body_interpreter = self.mime_body_interpreter.with_show_multiparts(b);
-        self
-    }
-
-    /// Show MML parts tags.
-    pub fn with_show_parts(mut self, visibility: bool) -> Self {
-        self.mime_body_interpreter = self.mime_body_interpreter.with_show_parts(visibility);
-        self
-    }
-
-    /// Filter parts using the given strategy.
-    pub fn with_filter_parts(mut self, f: MmlFilterParts) -> Self {
-        self.mime_body_interpreter = self.mime_body_interpreter.with_filter_parts(f);
-        self
-    }
-
-    /// Show plain texts signature.
-    pub fn with_show_plain_texts_signature(mut self, b: bool) -> Self {
-        self.mime_body_interpreter = self
-            .mime_body_interpreter
-            .with_show_plain_texts_signature(b);
-        self
-    }
-
-    /// Show MML attachments tags.
-    pub fn with_show_attachments(mut self, b: bool) -> Self {
-        self.mime_body_interpreter = self.mime_body_interpreter.with_show_attachments(b);
-        self
-    }
-
-    /// Show MML inline attachments tags.
-    pub fn with_show_inline_attachments(mut self, b: bool) -> Self {
-        self.mime_body_interpreter = self.mime_body_interpreter.with_show_inline_attachments(b);
-        self
-    }
-
-    /// Automatically save attachments to the `save_attachments_dir`.
-    pub fn with_save_attachments(mut self, b: bool) -> Self {
-        self.mime_body_interpreter = self.mime_body_interpreter.with_save_attachments(b);
-        self
-    }
-
-    /// Customize the download attachments directory.
+    /// Adds headers on top of the current filter.
     ///
-    /// This can be used to display the `filename` property but also
-    /// to automatically save attachment with `save_attachments`.
-    pub fn with_save_attachments_dir(mut self, dir: impl Into<PathBuf>) -> Self {
-        self.mime_body_interpreter = self.mime_body_interpreter.with_save_attachments_dir(dir);
-        self
-    }
+    /// FIXME: an `All` filter collapses into an `Include` of just the
+    /// added headers, which drops every other one. It needs a shape
+    /// that can express "all, plus these".
+    pub fn extend(&mut self, headers: impl IntoIterator<Item = impl ToString>) {
+        let next: Vec<String> = dedup(headers)
+            .into_iter()
+            .filter(|header| !self.contains(header))
+            .collect();
 
-    /// Customize the download attachments directory using an optional
-    /// path.
-    ///
-    /// This can be used to display the `filename` property but also
-    /// to automatically save attachment with `save_attachments`.
-    pub fn with_save_some_attachments_dir(self, dir: Option<impl Into<PathBuf>>) -> Self {
-        match dir {
-            Some(dir) => self.with_save_attachments_dir(dir),
-            None => self
-                .with_save_attachments_dir(MmlMimeBodyInterpreter::default_save_attachments_dir()),
+        match self {
+            Self::All => *self = Self::Include(next),
+            Self::Include(headers) | Self::Exclude(headers) => headers.extend(next),
         }
     }
+}
 
-    /// Build the final [MmlMimeInterpreter].
-    ///
-    /// This intermediate step is not necessary for the interpreter,
-    /// the aim is just to have a common API with the compiler.
-    pub fn build(self) -> MmlMimeInterpreter {
-        MmlMimeInterpreter {
-            show_headers: self.show_headers,
-            mime_body_interpreter: self.mime_body_interpreter,
+fn dedup(headers: impl IntoIterator<Item = impl ToString>) -> Vec<String> {
+    headers.into_iter().fold(Vec::new(), |mut headers, header| {
+        let header = header.to_string();
+        if !headers.contains(&header) {
+            headers.push(header)
         }
-    }
+        headers
+    })
 }
 
 /// MIME → MML message interpreter.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct MmlMimeInterpreter {
-    show_headers: MmlFilterHeaders,
-    mime_body_interpreter: MmlMimeBodyInterpreter,
+    /// The strategy to display headers.
+    pub show_headers: MmlFilterHeaders,
+    /// The body-level interpreter, carrying the part options.
+    pub body: MmlMimeBodyInterpreter,
 }
 
 impl MmlMimeInterpreter {
-    /// Interpret the given MIME [Message] as a MML [String].
-    pub fn from_msg(self, msg: &Message<'_>) -> Result<String> {
+    /// Interprets the given MIME message bytes as MML.
+    pub fn interpret(&self, mime: impl AsRef<[u8]>) -> Result<String> {
+        let msg = MessageParser::new()
+            .parse(mime.as_ref())
+            .ok_or(MmlError::ParseRawEmailError)?;
+
+        self.interpret_msg(&msg)
+    }
+
+    /// Interprets the message a builder would produce as MML.
+    pub fn interpret_builder(&self, builder: MessageBuilder<'_>) -> Result<String> {
+        let mime = builder.write_to_vec().map_err(MmlError::BuildEmailError)?;
+
+        self.interpret(&mime)
+    }
+
+    /// Interprets an already-parsed MIME message as MML.
+    ///
+    /// NOTE: kept next to [`Self::interpret`] so a caller walking a
+    /// thread does not reparse every message.
+    pub fn interpret_msg(&self, msg: &Message<'_>) -> Result<String> {
         let mut mml = String::new();
 
-        match self.show_headers {
-            MmlFilterHeaders::All => msg.headers().iter().for_each(|header| {
-                let key = header.name.as_str();
-                let val = header::display_value(key, &header.value);
-                mml.push_str(&format!("{key}: {val}\n"));
-            }),
+        let mut push = |key: &str, val: &HeaderValue<'_>| {
+            let val = header::display_value(key, val);
+            mml.push_str(&format!("{key}: {val}\n"));
+        };
+
+        match &self.show_headers {
+            MmlFilterHeaders::All => msg
+                .headers()
+                .iter()
+                .for_each(|header| push(header.name.as_str(), &header.value)),
             MmlFilterHeaders::Include(keys) => keys
                 .iter()
                 .filter_map(|key| msg.header(key.as_str()).map(|val| (key, val)))
-                .for_each(|(key, val)| {
-                    let val = header::display_value(key, val);
-                    mml.push_str(&format!("{key}: {val}\n"));
-                }),
+                .for_each(|(key, val)| push(key, val)),
             MmlFilterHeaders::Exclude(keys) => msg
                 .headers()
                 .iter()
                 .filter(|header| !keys.contains(&header.name.as_str().to_owned()))
-                .for_each(|header| {
-                    let key = header.name.as_str();
-                    let val = header::display_value(key, &header.value);
-                    mml.push_str(&format!("{key}: {val}\n"));
-                }),
+                .for_each(|header| push(header.name.as_str(), &header.value)),
         };
 
         if !mml.is_empty() {
             mml.push('\n');
         }
 
-        let mime_body_interpreter = self.mime_body_interpreter;
-
-        let mml_body = mime_body_interpreter.interpret_msg(msg)?;
-
-        mml.push_str(&mml_body);
+        mml.push_str(&self.body.interpret_msg(msg)?);
 
         Ok(mml)
-    }
-
-    /// Interpret the given MIME message bytes as a MML [String].
-    pub fn from_bytes(self, bytes: impl AsRef<[u8]>) -> Result<String> {
-        let msg = MessageParser::new()
-            .parse(bytes.as_ref())
-            .ok_or(MmlError::ParseRawEmailError)?;
-        self.from_msg(&msg)
-    }
-
-    /// Interpret the given MIME [MessageBuilder] as a MML [String].
-    pub fn from_msg_builder(self, builder: MessageBuilder<'_>) -> Result<String> {
-        let bytes = builder.write_to_vec().map_err(MmlError::BuildEmailError)?;
-        self.from_bytes(&bytes)
     }
 }
 
@@ -266,7 +140,7 @@ mod tests {
     use concat_with::concat_line;
     use mail_builder::MessageBuilder;
 
-    use super::MmlMimeInterpreterBuilder;
+    use crate::interpreter::message::{MmlFilterHeaders, MmlMimeInterpreter};
 
     fn msg_builder() -> MessageBuilder<'static> {
         MessageBuilder::new()
@@ -281,10 +155,8 @@ mod tests {
 
     #[test]
     fn all_headers() {
-        let mml = MmlMimeInterpreterBuilder::new()
-            .with_show_all_headers()
-            .build()
-            .from_msg_builder(msg_builder())
+        let mml = MmlMimeInterpreter::default()
+            .interpret_builder(msg_builder())
             .unwrap();
 
         let expected_mml = concat_line!(
@@ -306,11 +178,12 @@ mod tests {
 
     #[test]
     fn only_headers() {
-        let mml = MmlMimeInterpreterBuilder::new()
-            .with_show_only_headers(["From", "Subject"])
-            .build()
-            .from_msg_builder(msg_builder())
-            .unwrap();
+        let mml = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::include(["From", "Subject"]),
+            ..Default::default()
+        }
+        .interpret_builder(msg_builder())
+        .unwrap();
 
         let expected_mml = concat_line!(
             "From: from@localhost",
@@ -324,11 +197,12 @@ mod tests {
 
     #[test]
     fn only_headers_duplicated() {
-        let mml = MmlMimeInterpreterBuilder::new()
-            .with_show_only_headers(["From", "Subject", "From"])
-            .build()
-            .from_msg_builder(msg_builder())
-            .unwrap();
+        let mml = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::include(["From", "Subject", "From"]),
+            ..Default::default()
+        }
+        .interpret_builder(msg_builder())
+        .unwrap();
 
         let expected_mml = concat_line!(
             "From: from@localhost",
@@ -342,11 +216,12 @@ mod tests {
 
     #[test]
     fn no_headers() {
-        let mml = MmlMimeInterpreterBuilder::new()
-            .with_hide_all_headers()
-            .build()
-            .from_msg_builder(msg_builder())
-            .unwrap();
+        let mml = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::Include(Vec::new()),
+            ..Default::default()
+        }
+        .interpret_builder(msg_builder())
+        .unwrap();
 
         let expected_mml = concat_line!("Hello, world!");
 
@@ -364,11 +239,12 @@ mod tests {
             .subject("subject")
             .text_body("<#part>Should be escaped.<#/part>");
 
-        let mml = MmlMimeInterpreterBuilder::new()
-            .with_show_only_headers(["From", "Subject"])
-            .build()
-            .from_msg_builder(msg_builder)
-            .unwrap();
+        let mml = MmlMimeInterpreter {
+            show_headers: MmlFilterHeaders::include(["From", "Subject"]),
+            ..Default::default()
+        }
+        .interpret_builder(msg_builder)
+        .unwrap();
 
         let expected_mml = concat_line!(
             "From: from@localhost",

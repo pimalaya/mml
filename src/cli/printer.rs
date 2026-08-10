@@ -16,8 +16,7 @@ use serde::Serialize;
 
 use crate::cli::args::OutputArg;
 
-/// A [`Printer`] writing to stdout, or to the file named by
-/// `--output`.
+/// A [`Printer`] writing to stdout or to the `--output` file.
 pub struct MmlPrinter {
     sink: Box<dyn Write>,
     json: bool,
@@ -25,10 +24,9 @@ pub struct MmlPrinter {
 }
 
 impl MmlPrinter {
-    /// Opens the sink named by `--output`, falling back to stdout.
+    /// Opens the `--output` sink, falling back to stdout.
     ///
-    /// NOTE: the file is truncated eagerly, so a bad path fails before
-    /// the command does any work.
+    /// NOTE: truncated eagerly, so a bad path fails before any work.
     pub fn new(json: &JsonFlag, output: &OutputArg) -> Result<Self> {
         let (sink, terminal): (Box<dyn Write>, bool) = match output.path() {
             Some(path) => {
@@ -46,7 +44,7 @@ impl MmlPrinter {
         })
     }
 
-    /// Builds a printer writing to stdout, whatever `--output` says.
+    /// Builds a stdout printer, whatever `--output` says.
     ///
     /// NOTE: used for the error report, so a failure never lands in a
     /// half-written artifact.

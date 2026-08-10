@@ -47,6 +47,7 @@ pub struct TemplateForwardCommand {
 }
 
 impl TemplateForwardCommand {
+    /// Builds the template and prints it, without opening the editor.
     pub fn execute(self, printer: &mut impl Printer, account: Account) -> Result<()> {
         let account = self
             .identity

@@ -1,3 +1,6 @@
+//! Crate-wide error type, shared by the compiler, the interpreter
+//! and the template builders.
+
 use std::{io, path::PathBuf, result};
 
 use thiserror::Error;
@@ -30,8 +33,6 @@ pub enum MmlError {
     ParseMmlEmptyBodyContentError,
     #[error("cannot compile MML message to vec")]
     CompileMmlMessageToVecError(#[source] io::Error),
-    #[error("cannot compile MML message to string")]
-    CompileMmlMessageToStringError(#[source] io::Error),
 
     #[error("cannot parse raw email")]
     ParseRawEmailError,

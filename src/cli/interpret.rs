@@ -14,8 +14,8 @@ use pimalaya_cli::printer::{Message, Printer};
 use crate::{
     cli::{account::Account, args::InputArg},
     interpreter::{
-        body::MmlFilterParts,
-        message::{MmlFilterHeaders, MmlMimeInterpreterBuilder},
+        body::{MmlFilterParts, MmlMimeBodyInterpreter},
+        message::{MmlFilterHeaders, MmlMimeInterpreter},
     },
 };
 
@@ -70,6 +70,7 @@ pub struct InterpretCommand {
 }
 
 impl InterpretCommand {
+    /// Interprets the source and prints the MML message.
     pub fn execute(self, printer: &mut impl Printer, account: Account) -> Result<()> {
         let mime = self.input.read()?;
 
@@ -107,19 +108,23 @@ impl InterpretCommand {
         let show_inline_attachments = !account.read_hide_inline_attachments.unwrap_or(false);
         let show_plain_texts_signature = !account.read_hide_plain_texts_signature.unwrap_or(false);
 
-        let interpreter = MmlMimeInterpreterBuilder::new()
-            .with_show_headers(filter_headers)
-            .with_filter_parts(filter_parts)
-            .with_show_multiparts(show_multiparts)
-            .with_save_attachments(save_attachments)
-            .with_save_some_attachments_dir(save_attachments_dir)
-            .with_show_attachments(show_attachments)
-            .with_show_inline_attachments(show_inline_attachments)
-            .with_show_plain_texts_signature(show_plain_texts_signature)
-            .build();
+        let interpreter = MmlMimeInterpreter {
+            show_headers: filter_headers,
+            body: MmlMimeBodyInterpreter {
+                filter_parts,
+                show_multiparts,
+                save_attachments,
+                save_attachments_dir: save_attachments_dir
+                    .unwrap_or_else(MmlMimeBodyInterpreter::default_save_attachments_dir),
+                show_attachments,
+                show_inline_attachments,
+                show_plain_texts_signature,
+                ..Default::default()
+            },
+        };
 
         let mml = interpreter
-            .from_bytes(mime.as_bytes())
+            .interpret(mime.as_bytes())
             .context("cannot interpret MIME message")?;
 
         printer.out(Message::new(mml))
