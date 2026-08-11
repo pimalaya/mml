@@ -179,6 +179,15 @@ Read (MIME → text), useful for piping through `less` or chaining with himalaya
 cat message.eml | mml read --exclude-header Received,DKIM-Signature
 ```
 
+Sign and encrypt with PGP, when built with the `pgp-gpg` feature. The properties go on the part, and signing always runs before encrypting:
+
+```sh
+mml compile <<< '<#part sign=pgpmime sender=me@example.org>hello<#/part>'
+mml compile <<< '<#part encrypt=pgpmime recipients=you@example.org,other@example.org>secret<#/part>'
+```
+
+Keys, the agent and the passphrase prompt all belong to your GPG installation, so recipients resolve through the same auto-key-locate the `gpg` command uses. Reading decrypts and verifies the same way. Without the feature, a message asking to be encrypted fails to compile rather than going out in the clear, and an encrypted part reads as an unresolved marker.
+
 Compose from a `mailto:` URI, which is what a desktop handler registers:
 
 ```sh

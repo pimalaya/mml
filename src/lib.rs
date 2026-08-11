@@ -32,9 +32,11 @@
 pub mod cli;
 #[cfg(feature = "compiler")]
 pub mod compiler;
+pub mod coroutine;
 pub mod error;
 #[cfg(feature = "interpreter")]
 pub mod interpreter;
+pub mod pgp;
 pub mod template;
 
 #[cfg(any(feature = "compiler", feature = "interpreter"))]

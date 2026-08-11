@@ -20,7 +20,7 @@ use edit::Builder as EditBuilder;
 
 use crate::{
     cli::utils::choice::{PostEditChoice, post_edit},
-    compiler::message::MmlCompiler,
+    compiler::message::MmlCompileOptions,
     error::MmlError,
     template::MmlTemplate,
 };
@@ -72,7 +72,7 @@ pub fn edit_loop(initial: MmlTemplate, has_output_path: bool) -> Result<Option<V
 }
 
 fn compile_buffer(buffer: &str) -> Result<Vec<u8>> {
-    match MmlCompiler::default().compile(buffer) {
+    match crate::cli::crypto::compile(buffer, MmlCompileOptions::default()) {
         Ok(mime) => Ok(mime),
         Err(MmlError::ParseMmlError(errs, body)) => {
             for err in &errs {

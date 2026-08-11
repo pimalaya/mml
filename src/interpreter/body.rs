@@ -293,7 +293,12 @@ impl MmlMimeBodyInterpreter {
         tpl
     }
 
-    fn interpret_part(&self, msg: &Message<'_>, part: &MessagePart<'_>) -> Result<String> {
+    fn interpret_part(
+        &self,
+        msg: &Message<'_>,
+        part: &MessagePart<'_>,
+        pgp: &mut Vec<MmlMimePgpRequest>,
+    ) -> Result<String> {
         let mut tpl = String::new();
         let ctype = get_ctype(part);
 
@@ -314,7 +319,44 @@ impl MmlMimeBodyInterpreter {
                 tpl.push_str(&self.interpret_inline_attachment(&ctype, part, data)?);
             }
             PartType::Message(msg) => {
-                tpl.push_str(&self.interpret_msg(msg)?);
+                tpl.push_str(&self.interpret_part(msg, msg.root_part(), pgp)?);
+            }
+            // NOTE: RFC 3156 section 4 pins the layout: a
+            // `application/pgp-encrypted` version part, then the
+            // OpenPGP message. Only the second one is decrypted.
+            PartType::Multipart(ids) if ctype == "multipart/encrypted" => {
+                let Some(encrypted) = ids.get(1).and_then(|id| msg.part(*id)) else {
+                    debug!("malformed multipart/encrypted, skipping it");
+                    return Ok(tpl);
+                };
+
+                tpl.push_str(&placeholder(pgp.len()));
+                pgp.push(MmlMimePgpRequest::Decrypt(encrypted.contents().to_vec()));
+            }
+            // NOTE: RFC 3156 section 5 pins the layout: the signed
+            // part, then its detached `application/pgp-signature`. The
+            // signed part renders as usual; the placeholder only
+            // carries whatever the caller makes of the verdict.
+            PartType::Multipart(ids) if ctype == "multipart/signed" => {
+                let signed = ids.first().and_then(|id| msg.part(*id));
+                let signature = ids.get(1).and_then(|id| msg.part(*id));
+
+                let (Some(signed), Some(signature)) = (signed, signature) else {
+                    debug!("malformed multipart/signed, skipping it");
+                    return Ok(tpl);
+                };
+
+                tpl.push_str(&placeholder(pgp.len()));
+                pgp.push(MmlMimePgpRequest::Verify {
+                    signed: msg
+                        .raw_message()
+                        .get(signed.offset_header as usize..signed.offset_end as usize)
+                        .unwrap_or_default()
+                        .to_vec(),
+                    signature: signature.contents().to_vec(),
+                });
+
+                tpl.push_str(&self.interpret_part(msg, signed, pgp)?);
             }
             PartType::Multipart(ids) if ctype == "multipart/alternative" => {
                 let mut parts = ids.iter().filter_map(|id| msg.part(*id));
@@ -354,7 +396,7 @@ impl MmlMimeBodyInterpreter {
                         match part {
                             Some(part) => Some(part),
                             None => match parts.next() {
-                                Some(part) => Some(self.interpret_part(msg, part)),
+                                Some(part) => Some(self.interpret_part(msg, part, pgp)),
                                 None => None,
                             },
                         }
@@ -364,13 +406,13 @@ impl MmlMimeBodyInterpreter {
                             .clone()
                             .find(|part| get_ctype(part).starts_with(ctype))
                         {
-                            Some(part) => Some(self.interpret_part(msg, part)),
+                            Some(part) => Some(self.interpret_part(msg, part, pgp)),
                             None => None,
                         }
                     }
                     MmlFilterParts::Include(ctypes) => {
                         match parts.clone().find(|part| ctypes.contains(&get_ctype(part))) {
-                            Some(part) => Some(self.interpret_part(msg, part)),
+                            Some(part) => Some(self.interpret_part(msg, part, pgp)),
                             None => None,
                         }
                     }
@@ -379,7 +421,7 @@ impl MmlMimeBodyInterpreter {
                             .clone()
                             .find(|part| !ctypes.contains(&get_ctype(part)))
                         {
-                            Some(part) => Some(self.interpret_part(msg, part)),
+                            Some(part) => Some(self.interpret_part(msg, part, pgp)),
                             None => None,
                         }
                     }
@@ -400,7 +442,7 @@ impl MmlMimeBodyInterpreter {
 
                 for id in ids {
                     if let Some(part) = msg.part(*id) {
-                        tpl.push_str(&self.interpret_part(msg, part)?);
+                        tpl.push_str(&self.interpret_part(msg, part, pgp)?);
                     } else {
                         debug!("cannot find part {id}, skipping it");
                     }
@@ -417,7 +459,17 @@ impl MmlMimeBodyInterpreter {
 
     /// Interpret the given MIME [Message] as a MML message string.
     pub fn interpret_msg<'a>(&self, msg: &Message<'a>) -> Result<String> {
-        self.interpret_part(msg, msg.root_part())
+        self.interpret_part(msg, msg.root_part(), &mut Vec::new())
+    }
+
+    /// Interprets a message, collecting the PGP requests its
+    /// encrypted parts need served.
+    pub(crate) fn interpret_msg_pgp<'a>(
+        &self,
+        msg: &Message<'a>,
+        pgp: &mut Vec<MmlMimePgpRequest>,
+    ) -> Result<String> {
+        self.interpret_part(msg, msg.root_part(), pgp)
     }
 
     /// Interpret the given MIME message bytes as a MML message
@@ -837,4 +889,67 @@ mod tests {
 
         assert_eq!(tpl, expected_tpl);
     }
+}
+
+/// Opens a placeholder marking where a decrypted layer goes.
+///
+/// NOTE: a control character, which MML markup never contains, so a
+/// placeholder can never collide with rendered content.
+pub(crate) const PLACEHOLDER_BEGIN: char = '\u{1}';
+
+/// Closes a placeholder, see [`PLACEHOLDER_BEGIN`].
+pub(crate) const PLACEHOLDER_END: char = '\u{2}';
+
+/// Marks where the decrypted layer of the given request goes.
+pub(crate) fn placeholder(index: usize) -> String {
+    format!("{PLACEHOLDER_BEGIN}{index}{PLACEHOLDER_END}")
+}
+
+/// A PGP request the walk found, resolved by
+/// [`crate::interpreter::layer`].
+///
+/// NOTE: internal. The public shape is the inlined `WantsPgp*`
+/// variants of [`crate::coroutine::MmlYield`].
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) enum MmlMimePgpRequest {
+    /// An OpenPGP message to decrypt.
+    Decrypt(Vec<u8>),
+    /// A detached signature to check against the bytes it covers.
+    Verify {
+        /// The exact bytes covered by the signature.
+        signed: Vec<u8>,
+        /// The detached `application/pgp-signature` payload.
+        signature: Vec<u8>,
+    },
+}
+
+/// What an unresolved encrypted part renders as.
+///
+/// NOTE: shared by the coroutine answering `Unavailable` and by the
+/// PGP-free path, so both degrade the same visible way.
+pub(crate) const UNAVAILABLE_PART: &str = "<#part type=application/pgp-encrypted><#/part>\n";
+
+/// Renders every placeholder as [`UNAVAILABLE_PART`].
+///
+/// NOTE: the PGP-free path collects no request, so its placeholders
+/// would otherwise leak control characters into the output.
+pub(crate) fn resolve_unavailable(mml: &str) -> String {
+    let mut resolved = String::with_capacity(mml.len());
+
+    for (i, chunk) in mml.split(PLACEHOLDER_BEGIN).enumerate() {
+        if i == 0 {
+            resolved.push_str(chunk);
+            continue;
+        }
+
+        match chunk.split_once(PLACEHOLDER_END) {
+            Some((_, rest)) => {
+                resolved.push_str(UNAVAILABLE_PART);
+                resolved.push_str(rest);
+            }
+            None => resolved.push_str(chunk),
+        }
+    }
+
+    resolved
 }

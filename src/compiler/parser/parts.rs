@@ -8,8 +8,9 @@ use crate::{
 use super::{
     prelude::*,
     props::{
-        creation_date, data_encoding, description, disposition, encoding, filename,
+        creation_date, data_encoding, description, disposition, encoding, encrypt, filename,
         modification_date, multipart_type, name, part_type, read_date, recipient_filename,
+        recipients, sender, sign,
     },
 };
 
@@ -34,9 +35,16 @@ pub(crate) fn multipart<'a>() -> impl Parser<'a, &'a str, Part<'a>, ParserError<
     recursive(|multipart| {
         just(MULTIPART_BEGIN)
             .ignore_then(
-                choice((multipart_type(), description()))
-                    .repeated()
-                    .collect::<Props>(),
+                choice((
+                    multipart_type(),
+                    description(),
+                    sign(),
+                    encrypt(),
+                    sender(),
+                    recipients(),
+                ))
+                .repeated()
+                .collect::<Props>(),
             )
             .then_ignore(just(GREATER_THAN))
             .then_ignore(new_line().or_not())
@@ -71,6 +79,10 @@ pub(crate) fn part<'a>() -> impl Parser<'a, &'a str, Part<'a>, ParserError<'a>> 
                 read_date(),
                 description(),
                 disposition(),
+                sign(),
+                encrypt(),
+                sender(),
+                recipients(),
             ))
             .repeated()
             .collect::<HashMap<_, _>>()
@@ -102,7 +114,7 @@ mod tests {
 
     use crate::{
         compiler::parser::{prelude::*, tokens::Part},
-        grammar::{DISPOSITION, FILENAME, NAME, TYPE},
+        grammar::{DISPOSITION, ENCRYPT, FILENAME, NAME, RECIPIENTS, SENDER, SIGN, TYPE},
     };
 
     #[test]
@@ -186,6 +198,43 @@ mod tests {
                     (DISPOSITION, "inline")
                 ]),
                 ""
+            )),
+        );
+    }
+
+    #[test]
+    fn pgp_props() {
+        assert_eq!(
+            super::part()
+                .parse(
+                    "<#part sign=pgpmime encrypt=pgpmime sender=me@x.y recipients=a@b.c,d@e.f><#/part>"
+                )
+                .into_result(),
+            Ok(Part::Single(
+                HashMap::from_iter([
+                    (SIGN, "pgpmime"),
+                    (ENCRYPT, "pgpmime"),
+                    (SENDER, "me@x.y"),
+                    (RECIPIENTS, "a@b.c,d@e.f"),
+                ]),
+                ""
+            )),
+        );
+    }
+
+    #[test]
+    fn pgp_props_on_multipart() {
+        assert_eq!(
+            super::multipart()
+                .parse(concat_line!(
+                    "<#multipart sign=pgpmime sender=me@x.y>",
+                    "This is a plain text part.",
+                    "<#/multipart>"
+                ))
+                .into_result(),
+            Ok(Part::Multi(
+                HashMap::from_iter([(SIGN, "pgpmime"), (SENDER, "me@x.y")]),
+                vec![Part::PlainText("This is a plain text part.\n")]
             )),
         );
     }

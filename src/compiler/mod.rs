@@ -2,5 +2,6 @@
 //! [`body`] and [`parser`] layers.
 
 pub mod body;
+pub mod crypto;
 pub mod message;
 pub(crate) mod parser;

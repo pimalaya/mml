@@ -10,6 +10,9 @@
   installShellCompletions ? stdenv.buildPlatform.canExecute stdenv.hostPlatform,
   installShellFiles,
   lib,
+  gpgme,
+  libgpg-error,
+  pkg-config,
   rustPlatform,
   stdenv,
 }:
@@ -35,7 +38,14 @@ rustPlatform.buildRustPackage {
     rev = "v${version}";
   };
 
-  nativeBuildInputs = lib.optional (installManPages || installShellCompletions) installShellFiles;
+  nativeBuildInputs =
+    lib.optional (installManPages || installShellCompletions) installShellFiles
+    ++ lib.optional (builtins.elem "pgp-gpg" buildFeatures) pkg-config;
+
+  buildInputs = lib.optionals (builtins.elem "pgp-gpg" buildFeatures) [
+    gpgme
+    libgpg-error
+  ];
 
   buildFeatures = buildFeatures ++ [ "cli" ];
 

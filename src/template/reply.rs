@@ -15,7 +15,7 @@ use crate::{
     error::Result,
     interpreter::{
         body::{MmlFilterParts, MmlMimeBodyInterpreter},
-        message::{MmlFilterHeaders, MmlMimeInterpreter},
+        message::{MmlFilterHeaders, MmlInterpretOptions},
     },
     template::{MmlTemplate, MmlTemplateBody, MmlTemplateCursor, address},
 };
@@ -48,13 +48,14 @@ pub struct MmlTemplateReplyBuilder {
 }
 
 impl MmlTemplateReplyBuilder {
-    pub fn build(self, msg: &Message) -> Result<MmlTemplate> {
-        let interpreter = MmlMimeInterpreter {
-            show_headers: MmlFilterHeaders::include(["From", "To", "In-Reply-To", "Cc", "Subject"]),
-            ..Default::default()
-        };
-
-        let thread_interpreter = MmlMimeInterpreter {
+    /// The interpreter options rendering the quote this builder
+    /// expects.
+    ///
+    /// NOTE: the builder no longer interprets the source itself, so
+    /// the caller can drive the coroutine and decrypt an encrypted
+    /// thread before quoting it.
+    pub fn quote_options() -> MmlInterpretOptions {
+        MmlInterpretOptions {
             show_headers: MmlFilterHeaders::Include(Vec::new()),
             body: MmlMimeBodyInterpreter {
                 show_parts: false,
@@ -67,6 +68,16 @@ impl MmlTemplateReplyBuilder {
                 ]),
                 ..Default::default()
             },
+        }
+    }
+
+    /// Builds the reply draft around the given rendered quote.
+    ///
+    /// Render it with [`Self::quote_options`].
+    pub fn build(self, msg: &Message, quote: &str) -> Result<MmlTemplate> {
+        let interpreter = MmlInterpretOptions {
+            show_headers: MmlFilterHeaders::include(["From", "To", "In-Reply-To", "Cc", "Subject"]),
+            ..Default::default()
         };
 
         let mut cursor = MmlTemplateCursor::default();
@@ -157,8 +168,7 @@ impl MmlTemplateReplyBuilder {
         builder = builder.text_body({
             let mut body = MmlTemplateBody::new(cursor);
 
-            let reply_body = thread_interpreter.interpret_msg(msg)?;
-            let reply_body = reply_body.trim();
+            let reply_body = quote.trim();
 
             if !reply_body.is_empty() && self.posting_style.is_bottom() {
                 body.push_str(&self.quote_headline);
@@ -304,6 +314,7 @@ impl MmlTemplateReplySignatureStyle {
 
 #[cfg(test)]
 mod tests {
+
     use concat_with::concat_line;
     use mail_parser::MessageParser;
 
@@ -313,6 +324,13 @@ mod tests {
             MmlTemplateReplyBuilder, MmlTemplateReplyPostingStyle, MmlTemplateReplySignatureStyle,
         },
     };
+
+    /// Renders the quote the builder used to render itself.
+    fn quote(msg: &mail_parser::Message<'_>) -> String {
+        MmlTemplateReplyBuilder::quote_options()
+            .interpret_msg(msg)
+            .unwrap()
+    }
 
     #[test]
     fn default() {
@@ -334,7 +352,7 @@ mod tests {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -369,7 +387,7 @@ mod tests {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -392,7 +410,7 @@ mod tests {
                 body: "Hello, back!".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -415,7 +433,7 @@ mod tests {
                 body: "\n\nHello\n,\nworld!\n\n!".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -459,7 +477,7 @@ mod tests {
                 signature: "-- \nsignature".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -487,7 +505,7 @@ mod tests {
                 signature_style: MmlTemplateReplySignatureStyle::AboveQuote,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -515,7 +533,7 @@ mod tests {
                 signature_style: MmlTemplateReplySignatureStyle::Hidden,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -554,7 +572,7 @@ mod tests {
                 posting_style: MmlTemplateReplyPostingStyle::Bottom,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -578,7 +596,7 @@ mod tests {
                 posting_style: MmlTemplateReplyPostingStyle::Interleaved,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -614,7 +632,7 @@ mod tests {
                 signature: "-- \nsignature".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -642,7 +660,7 @@ mod tests {
                 body: "Hello, back!".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -672,7 +690,7 @@ mod tests {
                 signature_style: MmlTemplateReplySignatureStyle::AboveQuote,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -702,7 +720,7 @@ mod tests {
                 signature_style: MmlTemplateReplySignatureStyle::Hidden,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -750,7 +768,7 @@ mod tests {
                 posting_style: MmlTemplateReplyPostingStyle::Bottom,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -780,7 +798,7 @@ mod tests {
                 posting_style: MmlTemplateReplyPostingStyle::Bottom,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -807,7 +825,7 @@ mod tests {
                 posting_style: MmlTemplateReplyPostingStyle::Interleaved,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -835,7 +853,7 @@ mod tests {
                 posting_style: MmlTemplateReplyPostingStyle::Interleaved,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -874,7 +892,7 @@ mod tests {
                 posting_style: MmlTemplateReplyPostingStyle::Bottom,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -900,7 +918,7 @@ mod tests {
                 posting_style: MmlTemplateReplyPostingStyle::Interleaved,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -944,7 +962,7 @@ mod tests {
                 posting_style: MmlTemplateReplyPostingStyle::Interleaved,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -987,7 +1005,7 @@ mod tests {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -1009,7 +1027,7 @@ mod tests {
                 reply_all: true,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -1050,7 +1068,7 @@ mod tests {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -1072,7 +1090,7 @@ mod tests {
                 reply_all: true,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -1114,7 +1132,7 @@ mod tests {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -1136,7 +1154,7 @@ mod tests {
                 reply_all: true,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -1179,7 +1197,7 @@ mod tests {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -1201,7 +1219,7 @@ mod tests {
                 reply_all: true,
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -1241,7 +1259,7 @@ mod tests {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -1290,7 +1308,7 @@ mod tests {
                 from: "me@localhost".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(

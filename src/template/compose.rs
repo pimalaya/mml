@@ -10,7 +10,7 @@ use crate::{
     error::Result,
     interpreter::{
         body::MmlMimeBodyInterpreter,
-        message::{MmlFilterHeaders, MmlMimeInterpreter},
+        message::{MmlFilterHeaders, MmlInterpretOptions},
     },
     template::{MmlTemplate, MmlTemplateBody, MmlTemplateCursor},
 };
@@ -31,7 +31,7 @@ impl MmlTemplateComposeBuilder {
             MmlFilterHeaders::include(["From", "To", "In-Reply-To", "Cc", "Subject"]);
         show_headers.extend(self.headers.iter().map(|(header, _)| header));
 
-        let interpreter = MmlMimeInterpreter {
+        let interpreter = MmlInterpretOptions {
             show_headers,
             body: MmlMimeBodyInterpreter {
                 save_attachments: true,

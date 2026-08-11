@@ -13,7 +13,7 @@ use crate::{
     error::Result,
     interpreter::{
         body::MmlMimeBodyInterpreter,
-        message::{MmlFilterHeaders, MmlMimeInterpreter},
+        message::{MmlFilterHeaders, MmlInterpretOptions},
     },
     template::{MmlTemplate, MmlTemplateBody, MmlTemplateCursor},
 };
@@ -45,18 +45,29 @@ pub struct MmlTemplateForwardBuilder {
 }
 
 impl MmlTemplateForwardBuilder {
-    pub fn build(self, msg: &Message) -> Result<MmlTemplate> {
-        let interpreter = MmlMimeInterpreter {
-            show_headers: MmlFilterHeaders::include(["From", "To", "In-Reply-To", "Cc", "Subject"]),
-            ..Default::default()
-        };
-
-        let thread_interpreter = MmlMimeInterpreter {
+    /// The interpreter options rendering the quote this builder
+    /// expects.
+    ///
+    /// NOTE: the builder no longer interprets the source itself, so
+    /// the caller can drive the coroutine and decrypt an encrypted
+    /// message before forwarding it.
+    pub fn quote_options() -> MmlInterpretOptions {
+        MmlInterpretOptions {
             show_headers: MmlFilterHeaders::include(["Date", "From", "To", "Cc", "Subject"]),
             body: MmlMimeBodyInterpreter {
                 save_attachments: true,
                 ..Default::default()
             },
+        }
+    }
+
+    /// Builds the forward draft around the given rendered quote.
+    ///
+    /// Render it with [`Self::quote_options`].
+    pub fn build(self, msg: &Message, quote: &str) -> Result<MmlTemplate> {
+        let interpreter = MmlInterpretOptions {
+            show_headers: MmlFilterHeaders::include(["From", "To", "In-Reply-To", "Cc", "Subject"]),
+            ..Default::default()
         };
 
         let mut cursor = MmlTemplateCursor::default();
@@ -108,7 +119,7 @@ impl MmlTemplateForwardBuilder {
 
             if self.posting_style.is_top() {
                 body.push_str(&self.quote_headline);
-                body.push_str(thread_interpreter.interpret_msg(msg)?.trim());
+                body.push_str(quote.trim());
                 body.flush()
             }
 
@@ -180,10 +191,18 @@ impl MmlTemplateForwardSignatureStyle {
 
 #[cfg(test)]
 mod tests {
+
     use concat_with::concat_line;
     use mail_parser::MessageParser;
 
     use crate::template::{MmlTemplate, forward::MmlTemplateForwardBuilder};
+
+    /// Renders the quote the builder used to render itself.
+    fn quote(msg: &mail_parser::Message<'_>) -> String {
+        MmlTemplateForwardBuilder::quote_options()
+            .interpret_msg(msg)
+            .unwrap()
+    }
 
     #[test]
     fn default() {
@@ -206,7 +225,7 @@ mod tests {
                 quote_headline: "-------- Forwarded Message --------\n".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(
@@ -250,7 +269,7 @@ mod tests {
                 quote_headline: "-------- Forwarded Message --------\n".into(),
                 ..Default::default()
             }
-            .build(&msg)
+            .build(&msg, &quote(&msg))
             .unwrap(),
             MmlTemplate::new_with_cursor(
                 concat_line!(

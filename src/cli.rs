@@ -14,6 +14,7 @@ pub mod compile;
 #[cfg(all(feature = "compiler", feature = "interpreter"))]
 pub mod compose;
 pub mod config;
+pub mod crypto;
 #[cfg(all(feature = "compiler", feature = "interpreter"))]
 pub mod forward;
 #[cfg(feature = "interpreter")]

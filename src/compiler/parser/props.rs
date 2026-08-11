@@ -8,8 +8,9 @@
 use crate::{
     compiler::parser::tokens::Prop,
     grammar::{
-        ALTERNATIVE, CREATION_DATE, DATA_ENCODING, DESCRIPTION, DISPOSITION, ENCODING, FILENAME,
-        MIXED, MODIFICATION_DATE, NAME, READ_DATE, RECIPIENT_FILENAME, RELATED, TYPE,
+        ALTERNATIVE, CREATION_DATE, DATA_ENCODING, DESCRIPTION, DISPOSITION, ENCODING, ENCRYPT,
+        FILENAME, MIXED, MODIFICATION_DATE, NAME, PGP_MIME, READ_DATE, RECIPIENT_FILENAME,
+        RECIPIENTS, RELATED, SENDER, SIGN, TYPE,
     },
 };
 
@@ -172,6 +173,55 @@ pub(crate) fn modification_date<'a>() -> impl Parser<'a, &'a str, Prop<'a>, Pars
 pub(crate) fn read_date<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
     just(READ_DATE)
         .labelled(READ_DATE)
+        .then_ignore(just('=').padded())
+        .then(choice((quoted_val(), val().to_slice())))
+        .padded()
+}
+
+/// The sign property parser.
+///
+/// > What technology to sign this MML part with.
+///
+/// NOTE: only `pgpmime` is accepted. The signing itself happens
+/// outside the crate, see [`crate::coroutine::MmlYield`].
+pub(crate) fn sign<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
+    just(SIGN)
+        .labelled(SIGN)
+        .then_ignore(just('=').padded())
+        .then(maybe_quoted_const_val(PGP_MIME).labelled(PGP_MIME))
+        .padded()
+}
+
+/// The encrypt property parser.
+///
+/// > What technology to encrypt this MML part with.
+///
+/// NOTE: only `pgpmime` is accepted, see [`sign`].
+pub(crate) fn encrypt<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
+    just(ENCRYPT)
+        .labelled(ENCRYPT)
+        .then_ignore(just('=').padded())
+        .then(maybe_quoted_const_val(PGP_MIME).labelled(PGP_MIME))
+        .padded()
+}
+
+/// The sender property parser.
+///
+/// > The identity this MML part is signed as.
+pub(crate) fn sender<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
+    just(SENDER)
+        .labelled(SENDER)
+        .then_ignore(just('=').padded())
+        .then(choice((quoted_val(), val().to_slice())))
+        .padded()
+}
+
+/// The recipients property parser.
+///
+/// > The identities this MML part is encrypted for, comma-separated.
+pub(crate) fn recipients<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
+    just(RECIPIENTS)
+        .labelled(RECIPIENTS)
         .then_ignore(just('=').padded())
         .then(choice((quoted_val(), val().to_slice())))
         .padded()

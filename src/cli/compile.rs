@@ -10,7 +10,11 @@ use ariadne::{Color, Label, Report, ReportKind, Source};
 use clap::Parser;
 use pimalaya_cli::printer::Printer;
 
-use crate::{cli::args::InputArg, compiler::message::MmlCompiler, error::MmlError};
+use crate::{
+    cli::{args::InputArg, crypto},
+    compiler::message::MmlCompileOptions,
+    error::MmlError,
+};
 
 /// Compile an MML message into a MIME message.
 #[derive(Debug, Parser)]
@@ -23,7 +27,7 @@ impl CompileCommand {
     /// Compiles the source and prints the MIME message.
     pub fn execute(self, printer: &mut impl Printer) -> Result<()> {
         let mml = self.input.read()?;
-        match MmlCompiler::default().compile(&mml) {
+        match crypto::compile(&mml, MmlCompileOptions::default()) {
             Err(MmlError::ParseMmlError(errs, body)) => {
                 for err in errs {
                     Report::build(ReportKind::Error, err.span().into_range())

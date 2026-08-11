@@ -5,21 +5,33 @@
 //! Aliased `mml read`, so it can be piped straight from
 //! `himalaya messages read --raw <id>` or any other MIME source.
 
-use std::path::PathBuf;
+use std::{fmt, path::PathBuf, process};
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use pimalaya_cli::printer::{Message, Printer};
+use pimalaya_cli::printer::Printer;
+use serde::Serialize;
 
 use crate::{
-    cli::{account::Account, args::InputArg},
+    cli::{account::Account, args::InputArg, crypto},
     interpreter::{
         body::{MmlFilterParts, MmlMimeBodyInterpreter},
-        message::{MmlFilterHeaders, MmlMimeInterpreter},
+        message::{MmlFilterHeaders, MmlInterpretOptions},
     },
+    pgp::MmlPgpVerdict,
 };
 
+/// Exit code reporting that a signature did not check out.
+///
+/// NOTE: distinct from 1, which every other failure uses, so a script
+/// can tell "could not read it" from "read it, do not trust it".
+const INVALID_SIGNATURE: i32 = 2;
+
 /// Interpret a MIME message back into an MML message.
+///
+/// Exits 0 when the message carries no signature or a valid one, 2
+/// when a signature is invalid, and 1 on any other failure. The
+/// message is rendered either way.
 #[derive(Debug, Parser)]
 pub struct InterpretCommand {
     #[command(flatten)]
@@ -108,7 +120,7 @@ impl InterpretCommand {
         let show_inline_attachments = !account.read_hide_inline_attachments.unwrap_or(false);
         let show_plain_texts_signature = !account.read_hide_plain_texts_signature.unwrap_or(false);
 
-        let interpreter = MmlMimeInterpreter {
+        let interpreter = MmlInterpretOptions {
             show_headers: filter_headers,
             body: MmlMimeBodyInterpreter {
                 filter_parts,
@@ -123,11 +135,21 @@ impl InterpretCommand {
             },
         };
 
-        let mml = interpreter
-            .interpret(mime.as_bytes())
+        let (mml, signatures) = crypto::interpret(mime.as_bytes(), interpreter)
             .context("cannot interpret MIME message")?;
 
-        printer.out(Message::new(mml))
+        let invalid = signatures.contains(&MmlPgpVerdict::Invalid);
+
+        printer.out(InterpretOutput { mml, signatures })?;
+
+        // NOTE: a bad signature does not stop the message from being
+        // read, so it cannot be an error. It leaves through the exit
+        // code instead, the one channel a pipeline can act on.
+        if invalid {
+            process::exit(INVALID_SIGNATURE);
+        }
+
+        Ok(())
     }
 }
 
@@ -136,4 +158,23 @@ impl InterpretCommand {
 /// remain in effect).
 fn flag(v: bool) -> Option<bool> {
     if v { Some(true) } else { None }
+}
+
+/// What `interpret` prints: the rendered MML, plus what came of any
+/// signature the message carried.
+///
+/// NOTE: the plain rendering is the MML alone, so stdout stays the
+/// raw artifact a composer or editor can consume. Only `--json`
+/// surfaces the signatures, since that flag reformats the whole
+/// output rather than adding to it.
+#[derive(Debug, Serialize)]
+struct InterpretOutput {
+    mml: String,
+    signatures: Vec<MmlPgpVerdict>,
+}
+
+impl fmt::Display for InterpretOutput {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.mml)
+    }
 }

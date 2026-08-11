@@ -2,13 +2,20 @@
 //! off to [`crate::interpreter::body`], returns the rendered MML as a
 //! [`String`].
 
+use std::borrow::Cow;
+
 use mail_builder::MessageBuilder;
-use mail_parser::{HeaderValue, Message, MessageParser};
+use mail_parser::{HeaderValue, Message};
 
 use crate::{
+    coroutine::MmlYield,
     error::{MmlError, Result},
     header,
-    interpreter::body::MmlMimeBodyInterpreter,
+    interpreter::{
+        body::{MmlMimeBodyInterpreter, MmlMimePgpRequest, resolve_unavailable},
+        layer::MmlInterpret,
+    },
+    pgp::MmlPgpAnswer,
 };
 
 /// Filters headers to show in the interpreted message.
@@ -73,21 +80,30 @@ fn dedup(headers: impl IntoIterator<Item = impl ToString>) -> Vec<String> {
 
 /// MIME → MML message interpreter.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct MmlMimeInterpreter {
+pub struct MmlInterpretOptions {
     /// The strategy to display headers.
     pub show_headers: MmlFilterHeaders,
     /// The body-level interpreter, carrying the part options.
     pub body: MmlMimeBodyInterpreter,
 }
 
-impl MmlMimeInterpreter {
+impl MmlInterpretOptions {
     /// Interprets the given MIME message bytes as MML.
+    ///
+    /// NOTE: drives [`MmlInterpret`] with no PGP backend, so encrypted
+    /// parts render as an unresolved marker. Drive the coroutine
+    /// yourself to decrypt them.
     pub fn interpret(&self, mime: impl AsRef<[u8]>) -> Result<String> {
-        let msg = MessageParser::new()
-            .parse(mime.as_ref())
-            .ok_or(MmlError::ParseRawEmailError)?;
+        let mut coroutine = MmlInterpret::new(Cow::Borrowed(mime.as_ref()), self.clone());
+        let mut answer = None;
 
-        self.interpret_msg(&msg)
+        loop {
+            match coroutine.resume(answer.take()) {
+                MmlYield::Ok(mml) => return Ok(mml),
+                MmlYield::Err(err) => return Err(err),
+                _ => answer = Some(MmlPgpAnswer::Unavailable),
+            }
+        }
     }
 
     /// Interprets the message a builder would produce as MML.
@@ -102,6 +118,21 @@ impl MmlMimeInterpreter {
     /// NOTE: kept next to [`Self::interpret`] so a caller walking a
     /// thread does not reparse every message.
     pub fn interpret_msg(&self, msg: &Message<'_>) -> Result<String> {
+        let mml = self.interpret_msg_pgp(msg, &mut Vec::new())?;
+
+        Ok(resolve_unavailable(&mml))
+    }
+
+    /// Interprets a message, collecting the PGP requests its encrypted
+    /// parts need served.
+    ///
+    /// NOTE: the rendered MML carries one placeholder per request, in
+    /// order. [`crate::interpreter::layer`] resolves them.
+    pub(crate) fn interpret_msg_pgp(
+        &self,
+        msg: &Message<'_>,
+        pgp: &mut Vec<MmlMimePgpRequest>,
+    ) -> Result<String> {
         let mut mml = String::new();
 
         let mut push = |key: &str, val: &HeaderValue<'_>| {
@@ -129,7 +160,7 @@ impl MmlMimeInterpreter {
             mml.push('\n');
         }
 
-        mml.push_str(&self.body.interpret_msg(msg)?);
+        mml.push_str(&self.body.interpret_msg_pgp(msg, pgp)?);
 
         Ok(mml)
     }
@@ -140,7 +171,7 @@ mod tests {
     use concat_with::concat_line;
     use mail_builder::MessageBuilder;
 
-    use crate::interpreter::message::{MmlFilterHeaders, MmlMimeInterpreter};
+    use crate::interpreter::message::{MmlFilterHeaders, MmlInterpretOptions};
 
     fn msg_builder() -> MessageBuilder<'static> {
         MessageBuilder::new()
@@ -155,7 +186,7 @@ mod tests {
 
     #[test]
     fn all_headers() {
-        let mml = MmlMimeInterpreter::default()
+        let mml = MmlInterpretOptions::default()
             .interpret_builder(msg_builder())
             .unwrap();
 
@@ -178,7 +209,7 @@ mod tests {
 
     #[test]
     fn only_headers() {
-        let mml = MmlMimeInterpreter {
+        let mml = MmlInterpretOptions {
             show_headers: MmlFilterHeaders::include(["From", "Subject"]),
             ..Default::default()
         }
@@ -197,7 +228,7 @@ mod tests {
 
     #[test]
     fn only_headers_duplicated() {
-        let mml = MmlMimeInterpreter {
+        let mml = MmlInterpretOptions {
             show_headers: MmlFilterHeaders::include(["From", "Subject", "From"]),
             ..Default::default()
         }
@@ -216,7 +247,7 @@ mod tests {
 
     #[test]
     fn no_headers() {
-        let mml = MmlMimeInterpreter {
+        let mml = MmlInterpretOptions {
             show_headers: MmlFilterHeaders::Include(Vec::new()),
             ..Default::default()
         }
@@ -239,7 +270,7 @@ mod tests {
             .subject("subject")
             .text_body("<#part>Should be escaped.<#/part>");
 
-        let mml = MmlMimeInterpreter {
+        let mml = MmlInterpretOptions {
             show_headers: MmlFilterHeaders::include(["From", "Subject"]),
             ..Default::default()
         }

@@ -12,6 +12,7 @@ use crate::{
     cli::{
         account::Account,
         args::{HeaderRawArgs, IdentityArgs, InputArg},
+        crypto,
     },
     template::reply::{
         MmlTemplateReplyBuilder, MmlTemplateReplyPostingStyle, MmlTemplateReplySignatureStyle,
@@ -74,6 +75,8 @@ impl TemplateReplyCommand {
             bail!("Invalid or malformed MIME message");
         };
 
+        let quote = crypto::quote(&mime, MmlTemplateReplyBuilder::quote_options())?;
+
         let tpl = MmlTemplateReplyBuilder {
             reply_all: self.reply_all,
             signature,
@@ -85,7 +88,7 @@ impl TemplateReplyCommand {
             headers: self.headers.raw,
             body: self.body,
         }
-        .build(&msg)?;
+        .build(&msg, &quote)?;
 
         printer.out(tpl)
     }

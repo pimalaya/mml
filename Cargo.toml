@@ -21,6 +21,7 @@ default = ["compiler", "interpreter"]
 cli = ["dep:anyhow", "dep:ariadne", "dep:clap", "dep:edit", "dep:pimalaya-cli", "dep:pimalaya-config", "dep:serde", "dep:serde_json"]
 compiler = ["dep:chumsky", "dep:shellexpand", "dep:tree_magic_mini"]
 interpreter = ["dep:nanohtml2text"]
+pgp-gpg = ["dep:gpgme"]
 
 [profile.release]
 lto = "fat"
@@ -50,11 +51,13 @@ ariadne = { version = "0.6", default-features = false, optional = true }
 chumsky = { version = "0.13", default-features = false, features = ["std", "stacker"], optional = true }
 clap = { version = "4.4", default-features = false, features = ["color", "derive", "env", "error-context", "help", "std", "suggestions", "usage", "wrap_help"], optional = true }
 edit = { version = "0.1", default-features = false, features = ["better-path"], optional = true }
+gpgme = { version = "0.11", default-features = false, optional = true }
 log = { version = "0.4", default-features = false }
 mail-builder = { version = "0.4", default-features = false, features = ["gethostname"] }
 mail-parser = { version = "0.11", default-features = false }
 nanohtml2text = { version = "0.2", default-features = false, optional = true }
 once_cell = { version = "1.21", default-features = false, features = ["std"] }
+ouroboros = { version = "0.18", default-features = false }
 pimalaya-cli = { version = "0.2", default-features = false, features = ["prompt", "terminal"], optional = true }
 pimalaya-config = { version = "0.1", default-features = false, features = ["toml"], optional = true }
 regex = { version = "1.12", default-features = false, features = ["perf", "std", "unicode"] }

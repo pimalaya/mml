@@ -34,6 +34,14 @@ pub enum MmlError {
     #[error("cannot compile MML message to vec")]
     CompileMmlMessageToVecError(#[source] io::Error),
 
+    #[error("no PGP backend available to sign or encrypt")]
+    PgpUnavailableError,
+    #[cfg(feature = "pgp-gpg")]
+    #[error("GPG error")]
+    PgpGpgError(#[source] gpgme::Error),
+    #[cfg(feature = "pgp-gpg")]
+    #[error("no recipient key to encrypt for")]
+    PgpMissingRecipientsError,
     #[error("cannot parse raw email")]
     ParseRawEmailError,
     #[error("cannot build email")]

@@ -11,6 +11,7 @@ use crate::{
     cli::{
         account::Account,
         args::{HeaderRawArgs, IdentityArgs, InputArg, OutputArg},
+        crypto,
         utils::editor::edit_loop,
     },
     template::forward::{
@@ -76,6 +77,8 @@ impl ForwardCommand {
             bail!("invalid or malformed MIME message on stdin");
         };
 
+        let quote = crypto::quote(&mime, MmlTemplateForwardBuilder::quote_options())?;
+
         let tpl = MmlTemplateForwardBuilder {
             signature,
             signature_style: account.forward_signature_style.unwrap_or_default(),
@@ -86,7 +89,7 @@ impl ForwardCommand {
             headers: self.headers.raw,
             body: self.body,
         }
-        .build(&msg)?;
+        .build(&msg, &quote)?;
 
         match edit_loop(tpl, output.path().is_some())? {
             Some(mime) => printer.out(String::from_utf8(mime)?),

@@ -2,4 +2,5 @@
 //! [`body`] layer.
 
 pub mod body;
+pub mod layer;
 pub mod message;

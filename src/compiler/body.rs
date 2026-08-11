@@ -27,7 +27,7 @@ use crate::{
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct MmlBodyCompiler {}
 
-impl<'a> MmlBodyCompiler {
+impl MmlBodyCompiler {
     /// Replace escaped opening and closing tags by normal opening and
     /// closing tags.
     fn unescape_mml_markup(text: impl AsRef<str>) -> String {
@@ -40,7 +40,7 @@ impl<'a> MmlBodyCompiler {
 
     /// Compile given parts parsed from a MML body to a
     /// [MessageBuilder].
-    fn compile_parts(&'a self, parts: Vec<Part<'a>>) -> Result<MessageBuilder<'a>> {
+    fn compile_parts(&self, parts: Vec<Part<'_>>) -> Result<MessageBuilder<'static>> {
         let mut builder = MessageBuilder::new();
 
         builder = match parts.len() {
@@ -62,7 +62,7 @@ impl<'a> MmlBodyCompiler {
     }
 
     /// Compile the given part parsed from MML body to a [MimePart].
-    fn compile_part(&'a self, part: Part<'a>) -> Result<MimePart<'a>> {
+    pub(crate) fn compile_part(&self, part: Part<'_>) -> Result<MimePart<'static>> {
         match part {
             Part::Multi(props, parts) => {
                 let no_parts = BodyPart::Multipart(Vec::new());
@@ -102,7 +102,7 @@ impl<'a> MmlBodyCompiler {
                             .map_err(|err| MmlError::ReadAttachmentError(err, fpath.clone()))?;
                         let mut ctype = Part::get_or_guess_content_type(props, &contents).into();
                         if let Some(name) = props.get(NAME) {
-                            ctype = ctype.attribute("name", *name);
+                            ctype = ctype.attribute("name", name.to_string());
                         }
                         MimePart::new(ctype, contents)
                     }
@@ -110,9 +110,9 @@ impl<'a> MmlBodyCompiler {
                         let mut ctype =
                             Part::get_or_guess_content_type(props, body.as_bytes()).into();
                         if let Some(name) = props.get(NAME) {
-                            ctype = ctype.attribute("name", *name);
+                            ctype = ctype.attribute("name", name.to_string());
                         }
-                        MimePart::new(ctype, body)
+                        MimePart::new(ctype, body.to_owned())
                     }
                 };
 
@@ -165,15 +165,22 @@ impl<'a> MmlBodyCompiler {
         }
     }
 
-    /// Compile the given raw MML body to MIME body.
-    pub fn compile(&'a self, mml_body: &'a str) -> Result<MessageBuilder<'a>> {
+    /// Parses the given raw MML body into its parts.
+    pub(crate) fn parse<'a>(&self, mml_body: &'a str) -> Result<Vec<Part<'a>>> {
         let res = parts::parts().parse(mml_body);
-        if let Some(parts) = res.output() {
-            Ok(self.compile_parts(parts.to_owned())?)
-        } else {
-            let errs = res.errors().map(|err| err.clone().into_owned()).collect();
-            Err(MmlError::ParseMmlError(errs, mml_body.to_owned()))
+
+        match res.output() {
+            Some(parts) => Ok(parts.to_owned()),
+            None => {
+                let errs = res.errors().map(|err| err.clone().into_owned()).collect();
+                Err(MmlError::ParseMmlError(errs, mml_body.to_owned()))
+            }
         }
+    }
+
+    /// Compile the given raw MML body to MIME body.
+    pub fn compile(&self, mml_body: &str) -> Result<MessageBuilder<'static>> {
+        self.compile_parts(self.parse(mml_body)?)
     }
 }
 
