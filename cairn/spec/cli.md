@@ -27,7 +27,7 @@ The seven commands building a template SHALL share `--from`, `--from-name` and `
 `mailto <URI>` SHALL parse an RFC 6068 URI into the same header set the `compose` flags produce, then run the compose path. Recipients come from the path and the `to` parameter; `subject`, `cc`, `bcc` and `in-reply-to` become headers; `body` pre-fills the draft. Every other key is dropped, including `from`, as RFC 6068 section 5 advises against honouring arbitrary headers from an untrusted URI.
 
 ### Requirement: The CLI serves PGP
-Driving the coroutines and answering their PGP yields SHALL happen in one CLI module, gated once on the `pgp-gpg` feature at the item rather than inside a function body. Without the feature every step answers `Unavailable`, and the library decides what that means per direction.
+Driving the coroutines and answering their PGP yields SHALL happen in one CLI module, gated once on the `gpg` feature at the item rather than inside a function body. Without the feature every step answers `Unavailable`, and the library decides what that means per direction.
 
 ### Requirement: An invalid signature is an exit code
 `interpret` SHALL exit 0 when the message carries no signature or a valid one, 2 when a signature is invalid, and 1 on any other failure. The message renders either way: a bad signature is a reason to distrust it, not a reason to hide it. The verdict never enters the rendered body, where it would be indistinguishable from text the sender wrote.

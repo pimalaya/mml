@@ -25,7 +25,7 @@ use crate::{
 /// The compiler follows the builder pattern, where the build function
 /// is named `compile`.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct MmlBodyCompiler {}
+pub struct MmlBodyCompiler;
 
 impl MmlBodyCompiler {
     /// Replace escaped opening and closing tags by normal opening and

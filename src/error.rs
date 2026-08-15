@@ -36,10 +36,10 @@ pub enum MmlError {
 
     #[error("no PGP backend available to sign or encrypt")]
     PgpUnavailableError,
-    #[cfg(feature = "pgp-gpg")]
+    #[cfg(feature = "gpg")]
     #[error("GPG error")]
     PgpGpgError(#[source] gpgme::Error),
-    #[cfg(feature = "pgp-gpg")]
+    #[cfg(feature = "gpg")]
     #[error("no recipient key to encrypt for")]
     PgpMissingRecipientsError,
     #[error("cannot parse raw email")]

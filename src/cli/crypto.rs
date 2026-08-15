@@ -55,7 +55,7 @@ fn finish<T>(yielded: MmlYield<T>) -> Result<T> {
 }
 
 /// Serves one step through GPG, `None` on a terminal yield.
-#[cfg(feature = "pgp-gpg")]
+#[cfg(feature = "gpg")]
 fn serve<T>(yielded: &MmlYield<T>) -> Result<Option<MmlPgpAnswer>> {
     crate::pgp::gpg::MmlPgpGpg::default()
         .serve(yielded)
@@ -66,7 +66,7 @@ fn serve<T>(yielded: &MmlYield<T>) -> Result<Option<MmlPgpAnswer>> {
 ///
 /// NOTE: read paths render the unresolved part, write paths abort.
 /// The library decides which, not this build.
-#[cfg(not(feature = "pgp-gpg"))]
+#[cfg(not(feature = "gpg"))]
 fn serve<T>(yielded: &MmlYield<T>) -> Result<Option<MmlPgpAnswer>> {
     Ok(match yielded {
         MmlYield::Ok(_) | MmlYield::Err(_) => None,

@@ -40,9 +40,9 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs =
     lib.optional (installManPages || installShellCompletions) installShellFiles
-    ++ lib.optional (builtins.elem "pgp-gpg" buildFeatures) pkg-config;
+    ++ lib.optional (builtins.elem "gpg" buildFeatures) pkg-config;
 
-  buildInputs = lib.optionals (builtins.elem "pgp-gpg" buildFeatures) [
+  buildInputs = lib.optionals (builtins.elem "gpg" buildFeatures) [
     gpgme
     libgpg-error
   ];

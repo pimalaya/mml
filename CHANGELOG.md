@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added the `pgp-gpg` cargo feature, off by default, serving the `WantsPgp*` yields through gpgme. GPG owns key discovery, the agent and the passphrase prompt; `pgp::gpg::MmlPgpGpg` is the only place in the crate performing cryptography, and the coroutines never reach it.
+- Added the `gpg` cargo feature, off by default, serving the `WantsPgp*` yields through gpgme. GPG owns key discovery, the agent and the passphrase prompt; `pgp::gpg::MmlPgpGpg` is the only place in the crate performing cryptography, and the coroutines never reach it.
 
   The signing identity comes from the part's `sender` property, falling back to the message `From`. Recipients come from the part's `recipients` property only: a config key could not know who a given message is addressed to.
 

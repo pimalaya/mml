@@ -8,7 +8,7 @@
 
 let
   # NOTE: gnupg and the gpgme headers are unconditional here, so the
-  # `pgp-gpg` feature builds and tests in the dev shell without a
+  # `gpg` feature builds and tests in the dev shell without a
   # second entry point. The package keeps them behind the feature.
   inherit (pkgs)
     cargo-deny

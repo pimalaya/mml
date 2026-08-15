@@ -7,7 +7,7 @@
 //!
 //! Requires the `gpg` binary, which the nix dev shell provides.
 
-#![cfg(feature = "pgp-gpg")]
+#![cfg(feature = "gpg")]
 
 use std::{fs, path::PathBuf, process::Command};
 

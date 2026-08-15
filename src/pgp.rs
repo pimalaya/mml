@@ -11,7 +11,7 @@
 //! silently sending a message that was meant to be encrypted is a
 //! security failure rather than a degraded experience.
 
-#[cfg(feature = "pgp-gpg")]
+#[cfg(feature = "gpg")]
 pub mod gpg;
 
 /// The caller's answer to a `WantsPgp*` yield.
