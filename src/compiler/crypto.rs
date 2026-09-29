@@ -18,7 +18,7 @@ use crate::{
         body::MmlBodyCompiler,
         parser::tokens::{Part, Props},
     },
-    error::{MmlError, Result},
+    error::Result,
     grammar::{ALTERNATIVE, ENCRYPT, MIXED, PGP_MIME, RECIPIENTS, RELATED, SENDER, SIGN, TYPE},
 };
 
@@ -203,12 +203,10 @@ impl MmlCryptoPlan {
 }
 
 /// Serialises a part for signing or encrypting.
-pub(crate) fn serialise(part: MimePart<'static>) -> Result<Vec<u8>> {
+pub(crate) fn serialise(part: MimePart<'static>) -> Vec<u8> {
     let mut bytes = Vec::new();
-    part.write_part(&mut bytes)
-        .map_err(MmlError::CompileMmlMessageToVecError)?;
-
-    Ok(bytes)
+    part.write_part(&mut bytes);
+    bytes
 }
 
 /// Wraps a signed part and its detached signature, RFC 3156 section 5.

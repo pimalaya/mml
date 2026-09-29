@@ -140,7 +140,7 @@ impl MmlCompile {
             // for the wrapping that follows. Signing keeps it as the
             // cleartext half of the `multipart/signed`.
             let part = plan.materialise(slot)?;
-            let plain = serialise(part.clone())?;
+            let plain = serialise(part.clone());
             plan.put(slot, part);
 
             return Ok(match step {

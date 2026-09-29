@@ -3,7 +3,7 @@ name = "mime-meta-language"
 description = "CLI and lib for the Emacs MIME message Meta Language (MML)"
 version = "1.1.1"
 authors = ["Clément DOUIN (soywod) <pimalaya.org@posteo.net>"]
-rust-version = "1.88"
+rust-version = "1.89"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 categories = ["command-line-utilities", "email", "text-processing"]
@@ -17,7 +17,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["compiler", "interpreter", "gpg", "cli"]
+default = ["compiler", "interpreter"]
 cli = ["dep:anyhow", "dep:ariadne", "dep:clap", "dep:edit", "dep:pimalaya-cli", "dep:pimalaya-config", "dep:serde", "dep:serde_json"]
 compiler = ["dep:chumsky", "dep:shellexpand", "dep:tree_magic_mini"]
 interpreter = ["dep:nanohtml2text"]
@@ -53,9 +53,9 @@ clap = { version = "4.4", default-features = false, features = ["color", "derive
 edit = { version = "0.1", default-features = false, features = ["better-path"], optional = true }
 gpgme = { version = "0.11", default-features = false, optional = true }
 log = { version = "0.4", default-features = false }
-mail-builder = { version = "0.4", default-features = false, features = ["gethostname"] }
+mail-builder = { version = "1", default-features = false, features = ["gethostname"] }
 mail-parser = { version = "0.11", default-features = false }
-nanohtml2text = { version = "0.2", default-features = false, optional = true }
+nanohtml2text = { version = "0.3", default-features = false, optional = true }
 once_cell = { version = "1.21", default-features = false, features = ["std"] }
 ouroboros = { version = "0.18", default-features = false }
 pimalaya-cli = { version = "0.2", default-features = false, features = ["prompt", "terminal"], optional = true }

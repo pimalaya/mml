@@ -18,68 +18,77 @@
 }:
 
 let
-  version = "1.0.0";
-  hash = "";
-  cargoHash = "";
-
-  emulator = stdenv.hostPlatform.emulator buildPackages;
-  exe = stdenv.hostPlatform.extensions.executable;
+  gpg = builtins.elem "gpg" buildFeatures;
 
 in
-rustPlatform.buildRustPackage {
-  inherit cargoHash version buildNoDefaultFeatures;
+rustPlatform.buildRustPackage (finalAttrs: {
+  __structuredAttrs = true;
+
+  inherit buildNoDefaultFeatures;
 
   pname = "mml";
+  version = "1.1.1";
+  cargoHash = "";
 
   src = fetchFromGitHub {
-    inherit hash;
     owner = "pimalaya";
-    repo = "mml";
-    rev = "v${version}";
+    repo = finalAttrs.pname;
+    tag = "v${finalAttrs.version}";
+    hash = "";
   };
 
-  nativeBuildInputs =
-    lib.optional (installManPages || installShellCompletions) installShellFiles
-    ++ lib.optional (builtins.elem "gpg" buildFeatures) pkg-config;
+  # pkg-config hands the linker libgpgme but no rpath, leaving a binary that
+  # cannot find it: not in postInstall, which runs it, nor once installed.
+  env.NIX_LDFLAGS = lib.optionalString (gpg && !stdenv.hostPlatform.isWindows) (
+    "-rpath " + lib.makeLibraryPath [ gpgme libgpg-error ]
+  );
 
-  buildInputs = lib.optionals (builtins.elem "gpg" buildFeatures) [
+  nativeBuildInputs = [ installShellFiles ] ++ lib.optional gpg pkg-config;
+
+  buildInputs = lib.optionals gpg [
     gpgme
     libgpg-error
   ];
 
+  # the binary lives behind the `cli` feature, off by default
   buildFeatures = buildFeatures ++ [ "cli" ];
 
-  cargoTestFlags = [ "--lib" ];
-
   postInstall =
-    lib.optionalString (lib.hasInfix "wine" emulator) ''
-      export WINEPREFIX="''${WINEPREFIX:-$(mktemp -d)}"
-      mkdir -p $WINEPREFIX
+    let
+      exe =
+        if stdenv.buildPlatform.canExecute stdenv.hostPlatform then
+          "$out/bin/${finalAttrs.meta.mainProgram}"
+        else
+          lib.getExe buildPackages.${finalAttrs.pname};
+    in
     ''
-    + ''
       mkdir -p $out/share/{completions,man}
-      ${emulator} "$out"/bin/mml${exe} manuals "$out"/share/man
-      ${emulator} "$out"/bin/mml${exe} completions -d "$out"/share/completions bash elvish fish powershell zsh
+      ${exe} manual -d "$out"/share/man
+      ${exe} completion -d "$out"/share/completions bash elvish fish powershell zsh
     ''
     + lib.optionalString installManPages ''
       installManPage "$out"/share/man/*
     ''
     + lib.optionalString installShellCompletions ''
-      installShellCompletion --cmd mml \
-        --bash "$out"/share/completions/mml.bash \
-        --fish "$out"/share/completions/mml.fish \
-        --zsh "$out"/share/completions/_mml
+      installShellCompletion --cmd ${finalAttrs.meta.mainProgram} \
+        --bash "$out"/share/completions/${finalAttrs.meta.mainProgram}.bash \
+        --fish "$out"/share/completions/${finalAttrs.meta.mainProgram}.fish \
+        --zsh "$out"/share/completions/_${finalAttrs.meta.mainProgram}
     '';
 
+  # disable the gpg integration tests: they need a gpg binary and a
+  # writable home the sandbox does not provide
+  cargoTestFlags = [ "--lib" ];
+
   meta = {
-    description = "CLI and lib for the Emacs MIME message Meta Language (MML), written in Rust";
+    description = "CLI and lib for the Emacs MIME message Meta Language (MML)";
     mainProgram = "mml";
-    homepage = "https://github.com/pimalaya/mml";
-    changelog = "https://github.com/pimalaya/mml/blob/master/CHANGELOG.md";
-    license = [
-      lib.licenses.mit
-      lib.licenses.asl20
+    homepage = "https://github.com/pimalaya/${finalAttrs.pname}";
+    changelog = "${finalAttrs.meta.homepage}/releases/tag/${finalAttrs.src.tag}";
+    license = with lib.licenses; [
+      asl20
+      mit
     ];
     maintainers = with lib.maintainers; [ soywod ];
   };
-}
+})
