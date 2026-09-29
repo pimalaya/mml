@@ -49,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING**: renamed every plural command to its singular, the plural staying as a hidden alias: `templates` becomes `template` (`tpl` still works), `completions` and `manuals` become `completion` and `manual`.
+
 - Moved quote rendering out of the reply and forward template builders. `MmlTemplateReplyBuilder::build` and `MmlTemplateForwardBuilder::build` now take the rendered quote as a second argument, and each type exposes `quote_options()` describing how that quote should be rendered.
 
   This is what lets replying to or forwarding an encrypted message quote the plaintext: the builders interpreted the source themselves through the borrowed-message path, which cannot drive the PGP coroutine, so a quoted thread came out as `<#part type=application/pgp-encrypted>`. The caller now drives interpretation and hands the result in.
@@ -61,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   The setters that carried logic moved onto the filter: `with_show_only_headers` is `MmlFilterHeaders::include` (still deduplicating), and `with_show_additional_headers` is `MmlFilterHeaders::extend`. `with_show_all_headers`, `with_hide_all_headers` and `with_save_some_attachments_dir` become plain values (`All`, `Include(Vec::new())`, and an `unwrap_or_else` at the call site).
 
-- Shared `--from`, `--from-name` and `--signature` across the seven commands building a template, so their help text and behaviour no longer drift. `templates compose` and `templates forward` lose their custom `<EMAIL>` and `<NAME>` value names in favour of the common ones.
+- Shared `--from`, `--from-name` and `--signature` across the seven commands building a template, so their help text and behaviour no longer drift. `template compose` and `template forward` lose their custom `<EMAIL>` and `<NAME>` value names in favour of the common ones.
 
 - Renamed every public library item to carry the `Mml` domain prefix, per the Pimalaya naming guidelines: `Template` became `MmlTemplate`, `TemplateCursor` became `MmlTemplateCursor`, `TemplateBody` became `MmlTemplateBody`, `TemplateBuilderCompose` became `MmlTemplateComposeBuilder` (same for reply and forward), the `Template*Style` enums gained the prefix, `MimeInterpreter` became `MmlMimeInterpreter`, `MimeBodyInterpreter` became `MmlMimeBodyInterpreter`, and `FilterHeaders` / `FilterParts` became `MmlFilterHeaders` / `MmlFilterParts`.
 

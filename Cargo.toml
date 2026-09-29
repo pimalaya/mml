@@ -59,7 +59,7 @@ nanohtml2text = { version = "0.2", default-features = false, optional = true }
 once_cell = { version = "1.21", default-features = false, features = ["std"] }
 ouroboros = { version = "0.18", default-features = false }
 pimalaya-cli = { version = "0.2", default-features = false, features = ["prompt", "terminal"], optional = true }
-pimalaya-config = { version = "0.1", default-features = false, features = ["toml"], optional = true }
+pimalaya-config = { version = "0.2", default-features = false, features = ["toml"], optional = true }
 regex = { version = "1.12", default-features = false, features = ["perf", "std", "unicode"] }
 serde = { version = "1", default-features = false, features = ["derive", "std"], optional = true }
 serde_json = { version = "1", default-features = false, features = ["std"], optional = true }

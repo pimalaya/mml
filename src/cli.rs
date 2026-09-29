@@ -86,8 +86,8 @@ pub struct Cli {
 pub enum Command {
     #[cfg(feature = "interpreter")]
     #[command(subcommand)]
-    #[clap(visible_alias = "tpl")]
-    Templates(TemplateCommand),
+    #[command(visible_alias = "tpl", alias = "templates")]
+    Template(TemplateCommand),
     #[cfg(feature = "compiler")]
     Compile(CompileCommand),
     #[cfg(feature = "interpreter")]
@@ -101,8 +101,10 @@ pub enum Command {
     Forward(ForwardCommand),
     #[cfg(all(feature = "compiler", feature = "interpreter"))]
     Mailto(MailtoCommand),
-    Completions(CompletionCommand),
-    Manuals(ManualCommand),
+    #[command(alias = "completions")]
+    Completion(CompletionCommand),
+    #[command(alias = "manuals")]
+    Manual(ManualCommand),
 }
 
 impl Command {
@@ -128,7 +130,7 @@ impl Command {
 
         match self {
             #[cfg(feature = "interpreter")]
-            Self::Templates(cmd) => cmd.execute(printer, account()?),
+            Self::Template(cmd) => cmd.execute(printer, account()?),
 
             #[cfg(feature = "compiler")]
             Self::Compile(cmd) => cmd.execute(printer),
@@ -144,8 +146,8 @@ impl Command {
             #[cfg(all(feature = "compiler", feature = "interpreter"))]
             Self::Mailto(cmd) => cmd.execute(printer, output, account()?),
 
-            Self::Completions(cmd) => cmd.execute(printer, Cli::command()),
-            Self::Manuals(cmd) => cmd.execute(printer, Cli::command()),
+            Self::Completion(cmd) => cmd.execute(printer, Cli::command()),
+            Self::Manual(cmd) => cmd.execute(printer, Cli::command()),
         }
     }
 }
