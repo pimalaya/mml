@@ -43,6 +43,11 @@ rustPlatform.buildRustPackage (finalAttrs: {
     "-rpath " + lib.makeLibraryPath [ gpgme libgpg-error ]
   );
 
+  # the build script links git2, whose libz-sys picks a system zlib as soon as
+  # pkg-config finds one, then fails to load it for lack of an rpath: build
+  # it statically, as it already is when pkg-config is absent.
+  env.LIBZ_SYS_STATIC = "1";
+
   nativeBuildInputs = [ installShellFiles ] ++ lib.optional gpg pkg-config;
 
   buildInputs = lib.optionals gpg [
