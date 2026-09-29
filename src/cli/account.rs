@@ -15,6 +15,7 @@ use std::path::PathBuf;
 
 use crate::{
     cli::config::{AccountConfig, Config},
+    compiler::body::MmlBodyFormat,
     template::{
         compose::MmlTemplateComposeSignatureStyle,
         forward::{MmlTemplateForwardPostingStyle, MmlTemplateForwardSignatureStyle},
@@ -43,18 +44,30 @@ pub struct Account {
     pub signature_delim: Option<String>,
     /// Where the signature sits in a fresh compose draft.
     pub compose_signature_style: Option<MmlTemplateComposeSignatureStyle>,
+    /// The format a compose draft's plain text is sent in.
+    pub compose_format: Option<MmlBodyFormat>,
+    /// The column a flowed compose draft is broken at.
+    pub compose_flowed_column: Option<usize>,
     /// Where the signature sits in a reply draft.
     pub reply_signature_style: Option<MmlTemplateReplySignatureStyle>,
     /// Whether the reply quotes above or below the cursor.
     pub reply_posting_style: Option<MmlTemplateReplyPostingStyle>,
     /// Headline line introducing the quoted reply body.
     pub reply_quote_headline: Option<String>,
+    /// The format a reply draft's plain text is sent in.
+    pub reply_format: Option<MmlBodyFormat>,
+    /// The column a flowed reply draft is broken at.
+    pub reply_flowed_column: Option<usize>,
     /// Where the signature sits in a forward draft.
     pub forward_signature_style: Option<MmlTemplateForwardSignatureStyle>,
     /// Whether the forward quotes above or below the cursor.
     pub forward_posting_style: Option<MmlTemplateForwardPostingStyle>,
     /// Headline line introducing the forwarded body.
     pub forward_quote_headline: Option<String>,
+    /// The format a forward draft's plain text is sent in.
+    pub forward_format: Option<MmlBodyFormat>,
+    /// The column a flowed forward draft is broken at.
+    pub forward_flowed_column: Option<usize>,
     /// Header names to keep when interpreting, all others dropped.
     pub read_include_headers: Option<Vec<String>>,
     /// Header names to drop when interpreting, all others kept.
@@ -262,16 +275,22 @@ impl Account {
             compose_signature_style: other
                 .compose_signature_style
                 .or(self.compose_signature_style),
+            compose_format: other.compose_format.or(self.compose_format),
+            compose_flowed_column: other.compose_flowed_column.or(self.compose_flowed_column),
 
             reply_signature_style: other.reply_signature_style.or(self.reply_signature_style),
             reply_posting_style: other.reply_posting_style.or(self.reply_posting_style),
             reply_quote_headline: other.reply_quote_headline.or(self.reply_quote_headline),
+            reply_format: other.reply_format.or(self.reply_format),
+            reply_flowed_column: other.reply_flowed_column.or(self.reply_flowed_column),
 
             forward_signature_style: other
                 .forward_signature_style
                 .or(self.forward_signature_style),
             forward_posting_style: other.forward_posting_style.or(self.forward_posting_style),
             forward_quote_headline: other.forward_quote_headline.or(self.forward_quote_headline),
+            forward_format: other.forward_format.or(self.forward_format),
+            forward_flowed_column: other.forward_flowed_column.or(self.forward_flowed_column),
 
             read_include_headers: other.read_include_headers.or(self.read_include_headers),
             read_exclude_headers: other.read_exclude_headers.or(self.read_exclude_headers),
@@ -307,14 +326,20 @@ impl From<Config> for Account {
             signature_delim: config.signature_delim,
 
             compose_signature_style: compose.signature_style,
+            compose_format: compose.format,
+            compose_flowed_column: compose.flowed_column,
 
             reply_signature_style: reply.signature_style,
             reply_posting_style: reply.posting_style,
             reply_quote_headline: reply.quote_headline,
+            reply_format: reply.format,
+            reply_flowed_column: reply.flowed_column,
 
             forward_signature_style: forward.signature_style,
             forward_posting_style: forward.posting_style,
             forward_quote_headline: forward.quote_headline,
+            forward_format: forward.format,
+            forward_flowed_column: forward.flowed_column,
 
             read_include_headers: read.include_headers,
             read_exclude_headers: read.exclude_headers,
@@ -344,14 +369,20 @@ impl From<AccountConfig> for Account {
             signature_delim: config.signature_delim,
 
             compose_signature_style: compose.signature_style,
+            compose_format: compose.format,
+            compose_flowed_column: compose.flowed_column,
 
             reply_signature_style: reply.signature_style,
             reply_posting_style: reply.posting_style,
             reply_quote_headline: reply.quote_headline,
+            reply_format: reply.format,
+            reply_flowed_column: reply.flowed_column,
 
             forward_signature_style: forward.signature_style,
             forward_posting_style: forward.posting_style,
             forward_quote_headline: forward.quote_headline,
+            forward_format: forward.format,
+            forward_flowed_column: forward.flowed_column,
 
             read_include_headers: read.include_headers,
             read_exclude_headers: read.exclude_headers,

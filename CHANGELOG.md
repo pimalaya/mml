@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added RFC 3676 `format=flowed` plain text ([#7](https://github.com/pimalaya/mml/issues/7)). Compiling breaks lines longer than `MmlBodyCompiler::flowed_column` (72 by default) with soft breaks, and interpreting joins them back, so a paragraph written as one line reflows to the reader's window. Opt-in through `MmlBodyCompiler::format`, the `format` and `flowed-column` keys of `[compose]`, `[reply]` and `[forward]`, or per part with `<#part format=flowed|fixed>`. Signed and encrypted parts stay fixed.
+
 - Added the `gpg` cargo feature, off by default, serving the `WantsPgp*` yields through gpgme. GPG owns key discovery, the agent and the passphrase prompt; `pgp::gpg::MmlPgpGpg` is the only place in the crate performing cryptography, and the coroutines never reach it.
 
   The signing identity comes from the part's `sender` property, falling back to the message `From`. Recipients come from the part's `recipients` property only: a config key could not know who a given message is addressed to.
@@ -48,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `-i, --input <PATH>` flag to every command reading a source, defaulting to stdin, with `-i -` naming stdin explicitly. An implicit stdin that is a terminal is rejected rather than left hanging.
 
 ### Changed
+
+- **BREAKING**: `MmlBodyCompiler` is no longer a unit struct. It carries `format` and `flowed_column`, so build it with `MmlBodyCompiler::default()` or a literal.
 
 - **BREAKING**: renamed every plural command to its singular, the plural staying as a hidden alias: `templates` becomes `template` (`tpl` still works), `completions` and `manuals` become `completion` and `manual`.
 

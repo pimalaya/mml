@@ -3,5 +3,6 @@
 
 pub mod body;
 pub mod crypto;
+mod flowed;
 pub mod message;
 pub(crate) mod parser;

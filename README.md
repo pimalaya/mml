@@ -31,6 +31,7 @@ This repository ships two layers:
 - **MML → MIME compilation** (requires `compiler` feature):
   - `<#part>` / `<#multipart>` directives with `type`, `filename`, `disposition`, `encoding`, `description`, `name`, `recipient-filename`, dates, etc.
   - Inline parts, attached parts, nested multiparts (`alternative`, `mixed`, `related`)
+  - RFC 3676 `format=flowed` plain text, opt-in or per part with `format=flowed|fixed`
   - File-path expansion via [`shellexpand`](https://crates.io/crates/shellexpand)
   - MIME-type detection via [`tree_magic_mini`](https://crates.io/crates/tree_magic_mini)
   - Parse-error reporting via [`ariadne`](https://crates.io/crates/ariadne) (CLI)
@@ -38,6 +39,7 @@ This repository ships two layers:
   - Header include / exclude filters
   - Part include / exclude filters
   - HTML → text rendering via [`nanohtml2text`](https://crates.io/crates/nanohtml2text)
+  - `format=flowed` plain text unflowed back into paragraphs
   - Attachment save-to-disk
   - `mml interpret` (aliased `mml read`): MIME on stdin, MML/text on stdout
 - **Editor-driven flow** (requires `cli` + `compiler` + `interpreter`):

@@ -45,6 +45,15 @@ https://example.org"""
 #   hidden   : omit entirely
 # compose.signature-style = "inlined"
 
+# How plain text is sent (RFC 3676). Same keys under `reply` and `forward`.
+#   fixed  : every line as written (default)
+#   flowed : lines longer than the column are broken with soft breaks the
+#            reader joins back, so paragraphs reflow to their window
+# compose.format = "fixed"
+
+# Column flowed lines are broken at. 998 ships each paragraph whole.
+# compose.flowed-column = 72
+
 # Where to place the signature relative to the quoted thread.
 #   above-quote : between your reply and the quote
 #   below-quote : after the quote (default)

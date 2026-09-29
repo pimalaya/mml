@@ -12,7 +12,7 @@ use crate::{
     cli::{
         account::Account,
         args::{HeaderRawArgs, IdentityArgs, OutputArg},
-        utils::editor::edit_loop,
+        utils::editor::{compile_options, edit_loop},
     },
     template::compose::{MmlTemplateComposeBuilder, MmlTemplateComposeSignatureStyle},
 };
@@ -66,7 +66,9 @@ impl ComposeCommand {
         }
         .build()?;
 
-        match edit_loop(tpl, output.path().is_some())? {
+        let opts = compile_options(account.compose_format, account.compose_flowed_column);
+
+        match edit_loop(tpl, opts, output.path().is_some())? {
             Some(mime) => printer.out(String::from_utf8(mime)?),
             None => bail!("aborted by user"),
         }

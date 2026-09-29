@@ -1,7 +1,7 @@
 ---
 cairn: change
 id: format-flowed
-status: active
+status: landed
 created: 2026-08-15
 ---
 
@@ -29,7 +29,7 @@ A `format` property joins the grammar on `<#part>`, taking the two values RFC 36
 
 Generating a flowed body means space-stuffing the lines that would otherwise be misread (section 4.4), breaking the rest at the column with a trailing space, and carrying the quote prefix onto every line a quoted paragraph breaks into. Reading one means counting the quote depth, unstuffing, joining the soft breaks, and honouring `DelSp=yes` by dropping the space it marks. Reading always unflows, with no option to turn it off: rendering a flowed body as raw text is not a preference, it is a bug.
 
-Signed and encrypted parts are not flowed, following `mml.el`. Trailing spaces are load-bearing and mail-builder picks `7bit` for an ASCII body, where an intermediary is free to strip them; RFC 3156 verification needs the signed bytes to arrive verbatim, so a stripped space is an invalid signature rather than a cosmetic loss.
+Signed and encrypted parts are not flowed, following `mml.el`. Transport is not the reason: mail-builder switches a body to quoted-printable as soon as a line ends in a space, so every soft break ships as `=20` and survives intermediaries and RFC 3156 canonicalisation alike. The skip is parity with the reference implementation, which keeps a signed body byte-for-byte what its author wrote.
 
 ## Scope / non-goals
 
@@ -39,4 +39,4 @@ Signed and encrypted parts are not flowed, following `mml.el`. Trailing spaces a
 
 **The `type` property is not inspected for parameters.** A `format` smuggled into `type="text/plain; format=flowed"` keeps reaching the wire as the opaque string it already is and performs no encoding. The property is the supported spelling, and quietly encoding on the strength of a substring match would make the two spellings differ in behaviour by accident.
 
-**Quoted-printable is not forced on flowed parts.** It would protect the trailing spaces against every intermediary rather than only against the signing case, at the cost of making every plain ASCII message unreadable in its raw form. Emacs does not, so neither does this, and the signing case is covered by not flowing at all.
+**The transfer encoding is not chosen here.** mail-builder already picks quoted-printable for any body with a trailing space, so a flowed part never ships as `7bit` and its raw form is QP. An explicit `encoding` property still wins, as for any part.

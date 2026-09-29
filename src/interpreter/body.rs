@@ -12,9 +12,10 @@ use nanohtml2text::html2text;
 use crate::{
     error::{MmlError, Result},
     grammar::{
-        MULTIPART_BEGIN, MULTIPART_BEGIN_ESCAPED, MULTIPART_END, MULTIPART_END_ESCAPED, PART_BEGIN,
-        PART_BEGIN_ESCAPED, PART_END, PART_END_ESCAPED,
+        DELSP, FLOWED, FORMAT, MULTIPART_BEGIN, MULTIPART_BEGIN_ESCAPED, MULTIPART_END,
+        MULTIPART_END_ESCAPED, PART_BEGIN, PART_BEGIN_ESCAPED, PART_END, PART_END_ESCAPED, YES,
     },
+    interpreter::flowed::decode,
 };
 
 /// Filters parts to show by MIME type.
@@ -246,11 +247,23 @@ impl MmlMimeBodyInterpreter {
         tpl
     }
 
-    fn interpret_text_plain(&self, plain: &str) -> String {
+    fn interpret_text_plain(&self, part: &MessagePart, plain: &str) -> String {
         let mut tpl = String::new();
 
         if self.filter_parts.contains("text/plain") {
             let plain = plain.replace('\r', "");
+
+            // NOTE: unflowed first, so the markup escaping and the
+            // signature stripping below both see logical lines.
+            let plain = match content_type_attribute(part, FORMAT) {
+                Some(format) if format.eq_ignore_ascii_case(FLOWED) => {
+                    let delsp = content_type_attribute(part, DELSP)
+                        .is_some_and(|delsp| delsp.eq_ignore_ascii_case(YES));
+                    decode(&plain, delsp)
+                }
+                _ => plain,
+            };
+
             let mut plain = Self::escape_mml_markup(plain);
 
             if !self.show_plain_texts_signature {
@@ -304,7 +317,7 @@ impl MmlMimeBodyInterpreter {
 
         match &part.body {
             PartType::Text(plain) if ctype == "text/plain" => {
-                tpl.push_str(&self.interpret_text_plain(plain));
+                tpl.push_str(&self.interpret_text_plain(part, plain));
             }
             PartType::Text(text) => {
                 tpl.push_str(&self.interpret_text(&ctype, text));
@@ -369,7 +382,7 @@ impl MmlMimeBodyInterpreter {
                                 PartType::Text(plain)
                                     if is_plain(part) && !plain.trim().is_empty() =>
                                 {
-                                    Some(Ok(self.interpret_text_plain(plain)))
+                                    Some(Ok(self.interpret_text_plain(part, plain)))
                                 }
                                 _ => None,
                             })
@@ -499,6 +512,11 @@ fn get_ctype(part: &MessagePart) -> String {
                 .map(|stype| format!("{}/{stype}", ctype.ctype()))
         })
         .unwrap_or_else(|| String::from("application/octet-stream"))
+}
+
+/// The given content type parameter of the part, if any.
+fn content_type_attribute<'a>(part: &'a MessagePart, name: &str) -> Option<&'a str> {
+    part.content_type()?.attribute(name)
 }
 
 fn is_plain(part: &MessagePart) -> bool {

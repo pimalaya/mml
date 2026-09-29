@@ -29,7 +29,7 @@ Interpreting a part whose content type carries `format=flowed` SHALL count the q
 A part carrying `DelSp=yes` SHALL be joined by deleting the marking space rather than keeping it. Compilation SHALL NOT emit the parameter: it exists for scripts that do not separate words with spaces, and every client that ignores it renders the joined words fused.
 
 ### Requirement: Crypto parts stay fixed
-A part carrying `sign` or `encrypt` SHALL NOT be flowed, whatever its format property says. Trailing spaces are load-bearing and an ASCII body ships as `7bit`, where an intermediary may strip them; RFC 3156 verifies the signed bytes as they arrive, so a stripped space is an invalid signature rather than a cosmetic loss. This is what `mml.el` does, for the same reason.
+A part carrying `sign` or `encrypt` SHALL NOT be flowed, whatever its format property says, as `mml.el` does. A signed body stays byte-for-byte what its author wrote. Transport alone would allow it: mail-builder ships any body with a trailing space as quoted-printable.
 
 ### Requirement: Parameters in the type property are opaque
 The compiler SHALL NOT inspect the `type` property for a `format` parameter. A `type="text/plain; format=flowed"` keeps reaching the wire as the opaque string mail-builder writes verbatim, and performs no encoding. Encoding on the strength of a substring would make the two spellings of the same intent behave differently by accident.

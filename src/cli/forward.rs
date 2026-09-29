@@ -12,7 +12,7 @@ use crate::{
         account::Account,
         args::{HeaderRawArgs, IdentityArgs, InputArg, OutputArg},
         crypto,
-        utils::editor::edit_loop,
+        utils::editor::{compile_options, edit_loop},
     },
     template::forward::{
         MmlTemplateForwardBuilder, MmlTemplateForwardPostingStyle, MmlTemplateForwardSignatureStyle,
@@ -91,7 +91,9 @@ impl ForwardCommand {
         }
         .build(&msg, &quote)?;
 
-        match edit_loop(tpl, output.path().is_some())? {
+        let opts = compile_options(account.forward_format, account.forward_flowed_column);
+
+        match edit_loop(tpl, opts, output.path().is_some())? {
             Some(mime) => printer.out(String::from_utf8(mime)?),
             None => bail!("aborted by user"),
         }

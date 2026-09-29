@@ -9,7 +9,7 @@ use super::{
     prelude::*,
     props::{
         creation_date, data_encoding, description, disposition, encoding, encrypt, filename,
-        modification_date, multipart_type, name, part_type, read_date, recipient_filename,
+        format, modification_date, multipart_type, name, part_type, read_date, recipient_filename,
         recipients, sender, sign,
     },
 };
@@ -79,6 +79,7 @@ pub(crate) fn part<'a>() -> impl Parser<'a, &'a str, Part<'a>, ParserError<'a>> 
                 read_date(),
                 description(),
                 disposition(),
+                format(),
                 sign(),
                 encrypt(),
                 sender(),

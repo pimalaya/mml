@@ -34,10 +34,13 @@ use std::{collections::HashMap, path::PathBuf};
 use pimalaya_config::toml::TomlConfig;
 use serde::Deserialize;
 
-use crate::template::{
-    compose::MmlTemplateComposeSignatureStyle,
-    forward::{MmlTemplateForwardPostingStyle, MmlTemplateForwardSignatureStyle},
-    reply::{MmlTemplateReplyPostingStyle, MmlTemplateReplySignatureStyle},
+use crate::{
+    compiler::body::MmlBodyFormat,
+    template::{
+        compose::MmlTemplateComposeSignatureStyle,
+        forward::{MmlTemplateForwardPostingStyle, MmlTemplateForwardSignatureStyle},
+        reply::{MmlTemplateReplyPostingStyle, MmlTemplateReplySignatureStyle},
+    },
 };
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -113,6 +116,8 @@ pub struct AccountConfig {
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct ComposeConfig {
     pub signature_style: Option<MmlTemplateComposeSignatureStyle>,
+    pub format: Option<MmlBodyFormat>,
+    pub flowed_column: Option<usize>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -121,6 +126,8 @@ pub struct ReplyConfig {
     pub signature_style: Option<MmlTemplateReplySignatureStyle>,
     pub posting_style: Option<MmlTemplateReplyPostingStyle>,
     pub quote_headline: Option<String>,
+    pub format: Option<MmlBodyFormat>,
+    pub flowed_column: Option<usize>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -129,6 +136,8 @@ pub struct ForwardConfig {
     pub signature_style: Option<MmlTemplateForwardSignatureStyle>,
     pub posting_style: Option<MmlTemplateForwardPostingStyle>,
     pub quote_headline: Option<String>,
+    pub format: Option<MmlBodyFormat>,
+    pub flowed_column: Option<usize>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]

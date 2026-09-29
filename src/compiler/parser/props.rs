@@ -9,8 +9,8 @@ use crate::{
     compiler::parser::tokens::Prop,
     grammar::{
         ALTERNATIVE, CREATION_DATE, DATA_ENCODING, DESCRIPTION, DISPOSITION, ENCODING, ENCRYPT,
-        FILENAME, MIXED, MODIFICATION_DATE, NAME, PGP_MIME, READ_DATE, RECIPIENT_FILENAME,
-        RECIPIENTS, RELATED, SENDER, SIGN, TYPE,
+        FILENAME, FIXED, FLOWED, FORMAT, MIXED, MODIFICATION_DATE, NAME, PGP_MIME, READ_DATE,
+        RECIPIENT_FILENAME, RECIPIENTS, RELATED, SENDER, SIGN, TYPE,
     },
 };
 
@@ -93,6 +93,21 @@ pub(crate) fn disposition<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserErro
         .labelled(DISPOSITION)
         .then_ignore(just('=').padded())
         .then(choice((inline(), attachment())))
+        .padded()
+}
+
+/// The format property parser.
+///
+/// Either `flowed` or `fixed`, the two RFC 3676 formats of a
+/// `text/plain` part (Content-Type). Ignored on any other type.
+pub(crate) fn format<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
+    just(FORMAT)
+        .labelled(FORMAT)
+        .then_ignore(just('=').padded())
+        .then(choice((
+            maybe_quoted_const_val(FLOWED).labelled(FLOWED),
+            maybe_quoted_const_val(FIXED).labelled(FIXED),
+        )))
         .padded()
 }
 

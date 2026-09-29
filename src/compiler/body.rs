@@ -6,28 +6,93 @@ use std::{ffi::OsStr, fs, ops::Deref, path::PathBuf};
 use log::debug;
 use mail_builder::{
     MessageBuilder,
+    headers::content_type::ContentType,
     mime::{BodyPart, MimePart},
 };
 
 use crate::{
-    compiler::parser::{parts, prelude::*, tokens::Part},
+    compiler::{
+        flowed::encode,
+        parser::{
+            parts,
+            prelude::*,
+            tokens::{Part, Props},
+        },
+    },
     error::{MmlError, Result},
     grammar::{
         ALTERNATIVE, ATTACHMENT, DISPOSITION, ENCODING, ENCODING_7BIT, ENCODING_8BIT,
-        ENCODING_BASE64, ENCODING_QUOTED_PRINTABLE, FILENAME, INLINE, MIXED, MULTIPART_BEGIN,
-        MULTIPART_BEGIN_ESCAPED, MULTIPART_END, MULTIPART_END_ESCAPED, NAME, PART_BEGIN,
-        PART_BEGIN_ESCAPED, PART_END, PART_END_ESCAPED, RECIPIENT_FILENAME, RELATED, TYPE,
+        ENCODING_BASE64, ENCODING_QUOTED_PRINTABLE, ENCRYPT, FILENAME, FLOWED, FORMAT, INLINE,
+        MIXED, MULTIPART_BEGIN, MULTIPART_BEGIN_ESCAPED, MULTIPART_END, MULTIPART_END_ESCAPED,
+        NAME, PART_BEGIN, PART_BEGIN_ESCAPED, PART_END, PART_END_ESCAPED, RECIPIENT_FILENAME,
+        RELATED, SIGN, TYPE,
     },
 };
+
+/// The format of a `text/plain` part (RFC 3676).
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[cfg_attr(feature = "cli", derive(serde::Deserialize))]
+#[cfg_attr(feature = "cli", serde(rename_all = "kebab-case"))]
+pub enum MmlBodyFormat {
+    /// Every newline is a hard break, shipped as written.
+    #[default]
+    Fixed,
+    /// Lines longer than the column are broken with soft breaks the
+    /// reader joins back.
+    Flowed,
+}
 
 /// MML → MIME message body compiler.
 ///
 /// The compiler follows the builder pattern, where the build function
 /// is named `compile`.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct MmlBodyCompiler;
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MmlBodyCompiler {
+    /// The format of `text/plain` parts carrying no `format`
+    /// property, bare text included.
+    pub format: MmlBodyFormat,
+    /// The column flowed lines are broken at, quote prefix included.
+    ///
+    /// 998, the RFC 5322 line limit, ships every paragraph whole.
+    pub flowed_column: usize,
+}
+
+impl Default for MmlBodyCompiler {
+    fn default() -> Self {
+        Self {
+            format: MmlBodyFormat::default(),
+            flowed_column: 72,
+        }
+    }
+}
+
+/// The content type of a flowed part.
+///
+/// NOTE: mail-builder adds `charset=utf-8` only to a content type
+/// carrying no attribute, so it is set here explicitly.
+fn flowed_content_type() -> ContentType<'static> {
+    ContentType::new("text/plain")
+        .attribute("charset", "utf-8")
+        .attribute(FORMAT, FLOWED)
+}
 
 impl MmlBodyCompiler {
+    /// Whether the given `text/plain` part properties ask for a
+    /// flowed body.
+    ///
+    /// A signed or encrypted part stays fixed whatever its format
+    /// says, as `mml.el` does.
+    fn flows(&self, props: &Props) -> bool {
+        if props.contains_key(SIGN) || props.contains_key(ENCRYPT) {
+            return false;
+        }
+
+        match props.get(FORMAT) {
+            Some(format) => *format == FLOWED,
+            None => self.format == MmlBodyFormat::Flowed,
+        }
+    }
+
     /// Replace escaped opening and closing tags by normal opening and
     /// closing tags.
     fn unescape_mml_markup(text: impl AsRef<str>) -> String {
@@ -100,19 +165,29 @@ impl MmlBodyCompiler {
                     Some(fpath) => {
                         let contents = fs::read(&fpath)
                             .map_err(|err| MmlError::ReadAttachmentError(err, fpath.clone()))?;
-                        let mut ctype = Part::get_or_guess_content_type(props, &contents).into();
+                        let mut ctype =
+                            ContentType::new(Part::get_or_guess_content_type(props, &contents));
                         if let Some(name) = props.get(NAME) {
                             ctype = ctype.attribute("name", name.to_string());
                         }
                         MimePart::new(ctype, contents)
                     }
                     None => {
-                        let mut ctype =
-                            Part::get_or_guess_content_type(props, body.as_bytes()).into();
+                        let ctype = Part::get_or_guess_content_type(props, body.as_bytes());
+
+                        // NOTE: a type carrying its own parameters is
+                        // opaque, only a bare text/plain is flowed.
+                        let (mut ctype, body) = if ctype == "text/plain" && self.flows(props) {
+                            (flowed_content_type(), encode(body, self.flowed_column))
+                        } else {
+                            (ContentType::new(ctype), body.to_owned())
+                        };
+
                         if let Some(name) = props.get(NAME) {
                             ctype = ctype.attribute("name", name.to_string());
                         }
-                        MimePart::new(ctype, body.to_owned())
+
+                        MimePart::new(ctype, body)
                     }
                 };
 
@@ -159,7 +234,14 @@ impl MmlBodyCompiler {
             }
             Part::PlainText(body) => {
                 let body = Self::unescape_mml_markup(body);
-                let part = MimePart::new("text/plain", body);
+
+                let part = match self.format {
+                    MmlBodyFormat::Fixed => MimePart::new("text/plain", body),
+                    MmlBodyFormat::Flowed => {
+                        MimePart::new(flowed_content_type(), encode(&body, self.flowed_column))
+                    }
+                };
+
                 Ok(part)
             }
         }

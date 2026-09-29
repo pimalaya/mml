@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use log::debug;
-use mail_builder::headers::content_type::ContentType;
 
 use crate::grammar::TYPE;
 
@@ -19,10 +18,7 @@ pub(crate) enum Part<'a> {
 }
 
 impl<'a> Part<'a> {
-    pub(crate) fn get_or_guess_content_type(
-        props: &Props,
-        body: &[u8],
-    ) -> impl Into<ContentType<'a>> {
+    pub(crate) fn get_or_guess_content_type(props: &Props, body: &[u8]) -> String {
         match props.get(TYPE) {
             Some(ctype) => ctype.to_string(),
             None => {

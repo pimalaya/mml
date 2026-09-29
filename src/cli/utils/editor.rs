@@ -20,10 +20,29 @@ use edit::Builder as EditBuilder;
 
 use crate::{
     cli::utils::choice::{PostEditChoice, post_edit},
-    compiler::message::MmlCompileOptions,
+    compiler::{
+        body::{MmlBodyCompiler, MmlBodyFormat},
+        message::MmlCompileOptions,
+    },
     error::MmlError,
     template::MmlTemplate,
 };
+
+/// Builds the compile options of a draft from its configuration
+/// section, unset values falling back to the compiler defaults.
+pub fn compile_options(
+    format: Option<MmlBodyFormat>,
+    flowed_column: Option<usize>,
+) -> MmlCompileOptions {
+    let defaults = MmlBodyCompiler::default();
+
+    MmlCompileOptions {
+        body: MmlBodyCompiler {
+            format: format.unwrap_or(defaults.format),
+            flowed_column: flowed_column.unwrap_or(defaults.flowed_column),
+        },
+    }
+}
 
 /// Compose loop: edit → compile → prompt → loop.
 ///
@@ -31,14 +50,18 @@ use crate::{
 /// "Save to file" and "Save to stdout"; the actual write happens at
 /// the caller. Returns `Ok(Some(mime))` when the user saves,
 /// `Ok(None)` on abort.
-pub fn edit_loop(initial: MmlTemplate, has_output_path: bool) -> Result<Option<Vec<u8>>> {
+pub fn edit_loop(
+    initial: MmlTemplate,
+    opts: MmlCompileOptions,
+    has_output_path: bool,
+) -> Result<Option<Vec<u8>>> {
     let mut buffer = initial.content;
 
     loop {
         buffer = edit::edit_with_builder(&buffer, EditBuilder::new().suffix(".eml"))
             .context("cannot spawn editor")?;
 
-        let compile_result = compile_buffer(&buffer);
+        let compile_result = compile_buffer(&buffer, &opts);
         let compiled = match &compile_result {
             Ok(mime) => Some(mime.clone()),
             Err(err) => {
@@ -71,8 +94,8 @@ pub fn edit_loop(initial: MmlTemplate, has_output_path: bool) -> Result<Option<V
     }
 }
 
-fn compile_buffer(buffer: &str) -> Result<Vec<u8>> {
-    match crate::cli::crypto::compile(buffer, MmlCompileOptions::default()) {
+fn compile_buffer(buffer: &str, opts: &MmlCompileOptions) -> Result<Vec<u8>> {
+    match crate::cli::crypto::compile(buffer, opts.clone()) {
         Ok(mime) => Ok(mime),
         Err(MmlError::ParseMmlError(errs, body)) => {
             for err in &errs {

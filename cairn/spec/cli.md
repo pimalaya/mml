@@ -34,3 +34,6 @@ Driving the coroutines and answering their PGP yields SHALL happen in one CLI mo
 
 ### Requirement: Signatures ride the payload, not stderr
 The verdicts SHALL be fields of the value `interpret` prints, whose plain rendering stays the raw MML so stdout remains what a composer can consume, and whose `--json` form carries a `signatures` array. Nothing about them goes to stderr, which carries logs alone.
+
+### Requirement: Format and column are configuration
+The `[compose]`, `[reply]` and `[forward]` configuration sections SHALL carry `format` and `flowed-column`, threaded into the compile options of the matching command, and no flag SHALL duplicate them. `compile` takes none and compiles fixed.
