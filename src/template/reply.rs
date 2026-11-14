@@ -119,15 +119,15 @@ impl MmlTemplateReplyBuilder {
         all_rcpts_email.insert(me.address.clone().unwrap());
 
         if !address::is_empty(reply_to) {
-            address::push_builder_address(&mut all_rcpts_email, &mut curr_rcpts, &reply_to);
+            address::push_builder_address(&mut all_rcpts_email, &mut curr_rcpts, reply_to);
         } else {
             let from = if !address::is_empty(from) {
                 from
             } else {
                 sender
             };
-            address::push_builder_address(&mut all_rcpts_email, &mut curr_rcpts, &from);
-            address::push_builder_address(&mut all_rcpts_email, &mut curr_rcpts, &to);
+            address::push_builder_address(&mut all_rcpts_email, &mut curr_rcpts, from);
+            address::push_builder_address(&mut all_rcpts_email, &mut curr_rcpts, to);
         }
 
         builder = builder.to(Address::new_list(curr_rcpts.clone()));
@@ -139,7 +139,7 @@ impl MmlTemplateReplyBuilder {
             let cc = msg.header("Cc").unwrap_or(&HeaderValue::Empty);
 
             curr_rcpts.clear();
-            address::push_builder_address(&mut all_rcpts_email, &mut curr_rcpts, &cc);
+            address::push_builder_address(&mut all_rcpts_email, &mut curr_rcpts, cc);
 
             if !curr_rcpts.is_empty() {
                 builder = builder.cc(curr_rcpts);

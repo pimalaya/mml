@@ -2,7 +2,7 @@
 //! [`crate::cli::reply`], built around
 //! [`crate::template::forward::MmlTemplateForwardBuilder`].
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use clap::Parser;
 use mail_parser::MessageParser;
 use pimalaya_cli::printer::Printer;
@@ -12,6 +12,8 @@ use crate::{
         account::Account,
         args::{HeaderRawArgs, IdentityArgs, InputArg, OutputArg},
         crypto,
+        error::{ErrorCode, FROM_MISSING, MIME_INVALID, error},
+        printer::rfc822,
         utils::editor::{compile_options, edit_loop},
     },
     template::forward::{
@@ -63,18 +65,18 @@ impl ForwardCommand {
             .merge_into(account)
             .with_forward_signature_style(self.signature_style)
             .with_forward_posting_style(self.posting_style)
-            .with_forward_quote_headline(self.quote_headline);
+            .with_forward_quote_headline(self.quote_headline.map(|q| q.replace("\\n", "\n")));
 
         let signature = account.signature();
 
         let Some(from) = account.from else {
-            bail!("missing `From` email from both config and args");
+            return Err(error(ErrorCode::FromMissing, FROM_MISSING));
         };
 
         let mime = self.input.read()?.into_bytes();
 
         let Some(msg) = MessageParser::new().parse(&mime) else {
-            bail!("invalid or malformed MIME message on stdin");
+            return Err(error(ErrorCode::MimeInvalid, MIME_INVALID));
         };
 
         let quote = crypto::quote(&mime, MmlTemplateForwardBuilder::quote_options())?;
@@ -94,8 +96,8 @@ impl ForwardCommand {
         let opts = compile_options(account.forward_format, account.forward_flowed_column);
 
         match edit_loop(tpl, opts, output.path().is_some())? {
-            Some(mime) => printer.out(String::from_utf8(mime)?),
-            None => bail!("aborted by user"),
+            Some(mime) => printer.out_bytes(rfc822(mime)),
+            None => Err(error(ErrorCode::Aborted, "Aborted by user")),
         }
     }
 }

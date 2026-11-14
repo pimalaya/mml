@@ -1,7 +1,7 @@
 //! MML → MIME body compilation: walks the parsed AST and emits MIME
 //! parts (inline, attached, multipart) via [`mail_builder`].
 
-use std::{ffi::OsStr, fs, ops::Deref, path::PathBuf};
+use std::{env, ffi::OsStr, fs, ops::Deref, path::PathBuf};
 
 use log::debug;
 use mail_builder::{
@@ -151,7 +151,10 @@ impl MmlBodyCompiler {
             Part::Single(ref props, body) => {
                 let fpath = match props.get(FILENAME) {
                     Some(fpath) => {
-                        let fpath = match shellexpand::full(fpath) {
+                        let home = || env::home_dir()?.into_os_string().into_string().ok();
+                        let var = |var: &str| env::var(var).map(Some);
+
+                        let fpath = match shellexpand::full_with_context(fpath, home, var) {
                             Ok(path) => PathBuf::from(path.as_ref()),
                             Err(_) => PathBuf::from(fpath),
                         };
@@ -163,7 +166,7 @@ impl MmlBodyCompiler {
 
                 let mut part = match &fpath {
                     Some(fpath) => {
-                        let contents = fs::read(&fpath)
+                        let contents = fs::read(fpath)
                             .map_err(|err| MmlError::ReadAttachmentError(err, fpath.clone()))?;
                         let mut ctype =
                             ContentType::new(Part::get_or_guess_content_type(props, &contents));

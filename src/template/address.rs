@@ -33,10 +33,10 @@ pub(crate) fn push_builder_address<'a>(
         HeaderValue::Address(parser::Address::List(addrs)) => {
             for addr in addrs {
                 if let Some(email) = addr.address.as_ref() {
-                    if let Some(addr) = &addr.address {
-                        if NO_REPLY.is_match(addr) {
-                            continue;
-                        }
+                    if let Some(addr) = &addr.address
+                        && NO_REPLY.is_match(addr)
+                    {
+                        continue;
                     }
 
                     if all_emails.insert(email.clone()) {
@@ -50,23 +50,23 @@ pub(crate) fn push_builder_address<'a>(
         }
         HeaderValue::Address(parser::Address::Group(groups)) => {
             for group in groups {
-                if let Some(group_name) = group.name.as_ref() {
-                    if all_emails.insert(group_name.clone()) {
-                        let name = Some(group_name.clone());
-                        let addrs = group
-                            .addresses
-                            .iter()
-                            .filter_map(|addr| {
-                                addr.address.as_ref().map(|email| {
-                                    let name = addr.name.clone();
-                                    let email = email.as_ref();
-                                    builder::Address::new_address(name, email)
-                                })
+                if let Some(group_name) = group.name.as_ref()
+                    && all_emails.insert(group_name.clone())
+                {
+                    let name = Some(group_name.clone());
+                    let addrs = group
+                        .addresses
+                        .iter()
+                        .filter_map(|addr| {
+                            addr.address.as_ref().map(|email| {
+                                let name = addr.name.clone();
+                                let email = email.as_ref();
+                                builder::Address::new_address(name, email)
                             })
-                            .collect();
+                        })
+                        .collect();
 
-                        all_addrs.push(builder::Address::new_group(name, addrs))
-                    }
+                    all_addrs.push(builder::Address::new_group(name, addrs))
                 }
             }
         }

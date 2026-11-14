@@ -1,107 +1,46 @@
-# ================================================================================
-# `mml` configuration file.
-#
-# Loaded from the first valid path among:
-#   - $XDG_CONFIG_HOME/mml/config.toml
-#   - $HOME/.config/mml/config.toml
-#   - $HOME/.mmlrc
-#
-# Override with `mml -c <PATH>` or `MML_CONFIG=<PATH>`.
-#
-# CLI flags always win; the values below are merely defaults applied when the
-# matching flag is not passed.
-#
-# The editor used by `compose` / `reply` / `forward` is whichever your shell
-# already exports: `$VISUAL` first, then `$EDITOR`. mml does not duplicate that
-# knob here; pick the editor in your shell rc file.
-# ================================================================================
-
-# Declare one section per identity. Pick one with `-a/--account <NAME>` or let
-# `mml` use the entry flagged `default = true`.
 [accounts.example]
+default = true				# make this account the default one used
+from = "test@example.org"		# the From address of the drafts
+from-name = "Test"			# the display name paired with it
+signature = "Test\nhttps://example.org"	# the signature, after its delimiter
+#signature-delim = "-- \n"		# the delimiter before the signature
 
-# Use this account when `-a/--account` is not passed. Exactly one entry should
-# set `default = true`.
-default = true
+compose.signature-style = "inlined"	# append the signature to the body
+#compose.signature-style = "attached"	# attach it as signature.txt
+#compose.signature-style = "hidden"	# leave it out
+compose.format = "fixed"		# send plain text lines as written
+#compose.format = "flowed"		# break long lines softly, the reader joining them back (RFC 3676)
+#compose.flowed-column = 72		# the column flowed lines break at, 998 shipping paragraphs whole
 
-# Email address used as the `From:` header.
-from = "test@example.org"
+reply.posting-style = "top"		# your reply, then the quote
+#reply.posting-style = "bottom"		# the quote, then your reply
+#reply.posting-style = "interleaved"	# the cursor at the top of the quote
+reply.signature-style = "below-quote"	# the signature after the quote
+#reply.signature-style = "above-quote"	# the signature between your reply and the quote
+#reply.signature-style = "attached"	# attach it as signature.txt
+#reply.signature-style = "hidden"	# leave it out
+#reply.quote-headline = "You wrote:\n"	# the line above the quote, empty by default
+reply.format = "fixed"			# send plain text lines as written
+#reply.format = "flowed"		# break long lines softly (RFC 3676)
+#reply.flowed-column = 72		# the column flowed lines break at
 
-# Display name placed before the address.
-from-name = "Test"
+forward.posting-style = "top"				# the forwarded message quoted below your body
+#forward.posting-style = "attached"			# the forwarded message attached as message/rfc822
+forward.signature-style = "inlined"			# append the signature to the body
+#forward.signature-style = "attached"			# attach it as signature.txt
+#forward.signature-style = "hidden"			# leave it out
+#forward.quote-headline = "Forwarded message:\n"	# the line above the forwarded message, empty by default
+forward.format = "fixed"				# send plain text lines as written
+#forward.format = "flowed"				# break long lines softly (RFC 3676)
+#forward.flowed-column = 72				# the column flowed lines break at
 
-# Signature delimiter prepended to the body. Defaults to the RFC 3676
-# sig-dash + LF ("-- \n"); rarely worth changing.
-# signature-delim = "-- \n"
-
-# Raw signature body. The `signature-delim` (default "-- \n") is prepended
-# automatically at runtime, so do NOT include the sig-dash here.
-signature = """Test
-https://example.org"""
-
-# How to attach the signature.
-#   inlined  : append to the body (default)
-#   attached : ship as a `signature.txt` attachment
-#   hidden   : omit entirely
-# compose.signature-style = "inlined"
-
-# How plain text is sent (RFC 3676). Same keys under `reply` and `forward`.
-#   fixed  : every line as written (default)
-#   flowed : lines longer than the column are broken with soft breaks the
-#            reader joins back, so paragraphs reflow to their window
-# compose.format = "fixed"
-
-# Column flowed lines are broken at. 998 ships each paragraph whole.
-# compose.flowed-column = 72
-
-# Where to place the signature relative to the quoted thread.
-#   above-quote : between your reply and the quote
-#   below-quote : after the quote (default)
-#   attached    : `signature.txt` attachment
-#   hidden      : omit entirely
-# reply.signature-style = "below-quote"
-
-# Where to place your reply relative to the quoted thread.
-#   top         : your reply, then the quote (default)
-#   bottom      : the quote, then your reply
-#   interleaved : cursor placed at the top of the quote
-# reply.posting-style = "top"
-
-# Line printed above the quoted thread. Empty by default.
-# reply.quote-headline = "On <date>, <author> wrote:\n"
-
-# How to attach the signature.
-#   inlined | attached | hidden
-# forward.signature-style = "inlined"
-
-# How to attach the forwarded message.
-#   top      : quoted inline below your body (default)
-#   attached : shipped as a `message/rfc822` attachment
-# forward.posting-style = "top"
-
-# Line printed above the forwarded message.
-# forward.quote-headline = "-------- Forwarded Message --------\n"
-
-# Whitelist of header names to keep. When set, all other headers are dropped.
-# read.include-headers = ["From", "To", "Cc", "Subject", "Date"]
-
-# Blacklist of header names to drop. Ignored when `include-headers` is set.
-# read.exclude-headers = ["Received", "DKIM-Signature"]
-
-# Whitelist / blacklist of MIME part content types.
-# read.include-parts = ["text/plain"]
-# read.exclude-parts = ["text/html"]
-
-# Render the `multipart/*` part markers in the output.
-# read.show-multiparts = false
-
-# Save attachments to disk while rendering.
-# read.save-attachments = false
-# read.save-attachments-dir = "~/Downloads"
-
-# Suppress attachment markers in the rendered output.
-# read.hide-attachments = false
-# read.hide-inline-attachments = false
-
-# Strip the trailing `-- \n` signature block from plain-text parts.
-# read.hide-plain-texts-signature = false
+#read.include-headers = ["From", "To", "Cc", "Subject", "Date"]	# the headers to keep, all others dropped
+#read.exclude-headers = ["Received", "DKIM-Signature"]		# the headers to drop, ignored beside include-headers
+#read.include-parts = ["text/plain"]				# the part types to render, all others dropped
+#read.exclude-parts = ["text/html"]				# the part types to skip, ignored beside include-parts
+#read.show-multiparts = true					# render the multipart markers
+#read.save-attachments = true					# save the attachments while rendering
+#read.save-attachments-dir = "/home/user/Downloads"		# where they land, the system temporary directory by default
+#read.hide-attachments = true					# leave the attachment markers out
+#read.hide-inline-attachments = true				# leave the inline attachment markers out
+#read.hide-plain-texts-signature = true				# strip the signature from plain text parts

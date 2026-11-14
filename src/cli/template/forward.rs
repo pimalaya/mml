@@ -3,7 +3,7 @@
 //! prints it on stdout without opening the editor or compiling. Use
 //! `mml forward` for the full edit and compile flow.
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use clap::Parser;
 use mail_parser::MessageParser;
 use pimalaya_cli::printer::Printer;
@@ -13,6 +13,8 @@ use crate::{
         account::Account,
         args::{HeaderRawArgs, IdentityArgs, InputArg},
         crypto,
+        error::{ErrorCode, FROM_MISSING, MIME_INVALID, error},
+        template::TemplateOutput,
     },
     template::forward::{
         MmlTemplateForwardBuilder, MmlTemplateForwardPostingStyle, MmlTemplateForwardSignatureStyle,
@@ -55,18 +57,18 @@ impl TemplateForwardCommand {
             .merge_into(account)
             .with_forward_signature_style(self.signature_style)
             .with_forward_posting_style(self.posting_style)
-            .with_reply_quote_headline(self.quote_headline.map(|q| q.replace("\\n", "\n")));
+            .with_forward_quote_headline(self.quote_headline.map(|q| q.replace("\\n", "\n")));
 
         let signature = account.signature();
 
         let Some(from) = account.from else {
-            bail!("Missing `From` email from both config and args");
+            return Err(error(ErrorCode::FromMissing, FROM_MISSING));
         };
 
         let mime = self.input.read()?.into_bytes();
 
         let Some(msg) = MessageParser::new().parse(&mime) else {
-            bail!("Invalid or malformed MIME message");
+            return Err(error(ErrorCode::MimeInvalid, MIME_INVALID));
         };
 
         let quote = crypto::quote(&mime, MmlTemplateForwardBuilder::quote_options())?;
@@ -83,6 +85,6 @@ impl TemplateForwardCommand {
         }
         .build(&msg, &quote)?;
 
-        printer.out(tpl)
+        printer.out(TemplateOutput::from(tpl))
     }
 }

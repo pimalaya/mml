@@ -22,10 +22,14 @@ MML is a single crate shipping both a library and the `mml` binary. Triage befor
 
 ## Feature matrix
 
-MML is a library and a binary in one crate. Its cargo features are `compiler` (MML→MIME) and `interpreter` (MIME→MML), both on by default, plus `cli`, which gates the `mml` binary and pulls clap, ariadne, the editor integration and the config loader. The binary requires `cli`, and the editor-driven subcommands require `compiler` and `interpreter` together. Build reduced sets to check the feature gates still hold when touching them:
+MML is a library and a binary in one crate. Its cargo features are `compiler` (MML→MIME) and `interpreter` (MIME→MML), both on by default, `gpg`, serving PGP through gpgme, plus `cli`, which gates the `mml` binary, turns both pipelines on and pulls clap, ariadne, the editor integration, the config loader and schemars. CI runs clippy with `-D warnings` over every set below, so check them when touching a gate:
 
 ```sh
-cargo build --no-default-features --features compiler
-cargo build --no-default-features --features interpreter
-cargo build --features cli
+cargo clippy --all-targets -- -D warnings
+cargo clippy --all-targets --all-features -- -D warnings
+cargo clippy --all-targets --no-default-features -- -D warnings
+cargo clippy --all-targets --no-default-features --features compiler -- -D warnings
+cargo clippy --all-targets --no-default-features --features interpreter -- -D warnings
+cargo clippy --all-targets --no-default-features --features cli -- -D warnings
+cargo clippy --all-targets --features gpg -- -D warnings
 ```

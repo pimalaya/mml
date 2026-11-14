@@ -1,18 +1,27 @@
+[graph]
+targets = [
+  "aarch64-apple-darwin",
+  "aarch64-unknown-linux-gnu",
+  "aarch64-unknown-linux-musl",
+  "arm-unknown-linux-musleabihf",
+  "armv7-unknown-linux-musleabihf",
+  "i686-unknown-linux-musl",
+  "x86_64-apple-darwin",
+  "x86_64-pc-windows-gnu",
+  "x86_64-pc-windows-msvc",
+  "x86_64-unknown-linux-gnu",
+  "x86_64-unknown-linux-musl",
+]
+
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-allow-git = [
-  "https://github.com/pimalaya/cli",
-  "https://github.com/pimalaya/config",
-]
 
 [licenses]
 allow = [
   "Apache-2.0 WITH LLVM-exception",
   "Apache-2.0",
-  "CC0-1.0",
   "MIT",
-  "MPL-2.0",
   "Unicode-3.0",
   "Zlib",
 ]

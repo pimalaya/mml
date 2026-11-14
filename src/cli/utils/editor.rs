@@ -15,11 +15,14 @@
 use std::io::{Write, stderr};
 
 use anyhow::{Context, Result};
-use ariadne::{Color, Label, Report, ReportKind, Source};
 use edit::Builder as EditBuilder;
 
 use crate::{
-    cli::utils::choice::{PostEditChoice, post_edit},
+    cli::{
+        crypto,
+        error::mml_invalid,
+        utils::choice::{PostEditChoice, post_edit},
+    },
     compiler::{
         body::{MmlBodyCompiler, MmlBodyFormat},
         message::MmlCompileOptions,
@@ -95,23 +98,9 @@ pub fn edit_loop(
 }
 
 fn compile_buffer(buffer: &str, opts: &MmlCompileOptions) -> Result<Vec<u8>> {
-    match crate::cli::crypto::compile(buffer, opts.clone()) {
+    match crypto::compile(buffer, opts.clone()) {
         Ok(mime) => Ok(mime),
-        Err(MmlError::ParseMmlError(errs, body)) => {
-            for err in &errs {
-                Report::build(ReportKind::Error, err.span().into_range())
-                    .with_message("cannot parse MML message")
-                    .with_label(
-                        Label::new(err.span().into_range())
-                            .with_message(err.reason().to_string())
-                            .with_color(Color::Red),
-                    )
-                    .finish()
-                    .eprint(Source::from(&body))
-                    .unwrap();
-            }
-            anyhow::bail!("MML parse error");
-        }
+        Err(MmlError::ParseMmlError(errs, body)) => Err(mml_invalid(&errs, &body, true)),
         Err(err) => Err(anyhow::Error::from(err)).context("cannot compile MML message"),
     }
 }

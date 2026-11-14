@@ -48,7 +48,7 @@ pub(crate) fn part_type<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<
 /// The filename property parser.
 ///
 /// > Use the contents of the file in the body of the part
-/// (Content-Disposition).
+/// > (Content-Disposition).
 pub(crate) fn filename<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
     just(FILENAME)
         .labelled(FILENAME)
@@ -60,9 +60,9 @@ pub(crate) fn filename<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'
 /// The recipient filename property parser.
 ///
 /// > Use this as the file name in the generated MIME message for the
-/// recipient. That is, even if the file is called foo.txt locally,
-/// use this name instead in the Content-Disposition in the sent
-/// message.
+/// > recipient. That is, even if the file is called foo.txt locally,
+/// > use this name instead in the Content-Disposition in the sent
+/// > message.
 pub(crate) fn recipient_filename<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone
 {
     just(RECIPIENT_FILENAME)
@@ -75,7 +75,7 @@ pub(crate) fn recipient_filename<'a>() -> impl Parser<'a, &'a str, Prop<'a>, Par
 /// The name property parser.
 ///
 /// > Might be used to suggest a file name if the part is to be saved
-/// to a file (Content-Type).
+/// > to a file (Content-Type).
 pub(crate) fn name<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
     just(NAME)
         .labelled(NAME)
@@ -87,7 +87,7 @@ pub(crate) fn name<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> 
 /// The disposition property parser.
 ///
 /// > Valid values are ‘inline’ and ‘attachment’
-/// (Content-Disposition).
+/// > (Content-Disposition).
 pub(crate) fn disposition<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
     just(DISPOSITION)
         .labelled(DISPOSITION)
@@ -114,9 +114,9 @@ pub(crate) fn format<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>
 /// The encoding property parser.
 ///
 /// > Valid values are ‘7bit’, ‘8bit’, ‘quoted-printable’ and
-/// ‘base64’. See Charset Translation. This parameter says what
-/// Content-Transfer-Encoding to use when sending the part, and is
-/// normally computed automatically.
+/// > ‘base64’. See Charset Translation. This parameter says what
+/// > Content-Transfer-Encoding to use when sending the part, and is
+/// > normally computed automatically.
 pub(crate) fn encoding<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
     just(ENCODING)
         .labelled(ENCODING)
@@ -133,10 +133,10 @@ pub(crate) fn encoding<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'
 /// The data encoding property parser.
 ///
 /// > This parameter says what encoding has been used on the data, and
-/// the data will be decoded before use. Valid values are
-/// ‘quoted-printable’ and ‘base64’. This is useful when you have a
-/// part with binary data (for instance an image) inserted directly
-/// into the Message buffer inside the ‘"<#part>...<#/part>"’ tags.
+/// > the data will be decoded before use. Valid values are
+/// > ‘quoted-printable’ and ‘base64’. This is useful when you have a
+/// > part with binary data (for instance an image) inserted directly
+/// > into the Message buffer inside the ‘"<#part>...<#/part>"’ tags.
 pub(crate) fn data_encoding<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
     just(DATA_ENCODING)
         .labelled(DATA_ENCODING)
@@ -159,7 +159,7 @@ pub(crate) fn description<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserErro
 /// The creation date property parser.
 ///
 /// > Date when the part was created (Content-Disposition). This uses
-/// the format of RFC 822 or its successors.
+/// > the format of RFC 822 or its successors.
 pub(crate) fn creation_date<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
     just(CREATION_DATE)
         .labelled(CREATION_DATE)
@@ -171,7 +171,7 @@ pub(crate) fn creation_date<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserEr
 /// The modification date property parser.
 ///
 /// > RFC 822 (or later) date when the part was modified
-/// (Content-Disposition).
+/// > (Content-Disposition).
 pub(crate) fn modification_date<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone
 {
     just(MODIFICATION_DATE)
@@ -184,7 +184,7 @@ pub(crate) fn modification_date<'a>() -> impl Parser<'a, &'a str, Prop<'a>, Pars
 /// The read date property parser.
 ///
 /// > RFC 822 (or later) date when the part was read
-/// (Content-Disposition).
+/// > (Content-Disposition).
 pub(crate) fn read_date<'a>() -> impl Parser<'a, &'a str, Prop<'a>, ParserError<'a>> + Clone {
     just(READ_DATE)
         .labelled(READ_DATE)

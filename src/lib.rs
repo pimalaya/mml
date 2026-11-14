@@ -21,9 +21,11 @@
 //! - [`template`] builds compose, reply and forward drafts, the
 //!   starting point both pipelines share.
 //! - [`error`] is the crate-wide error type.
-//! - The cli module (feature `cli`) is the `mml` binary: the clap
-//!   tree, the TOML configuration, and the editor-driven flow. It is
-//!   not part of the library contract.
+//! - The cli module (feature `cli`, which turns both pipelines on) is
+//!   the `mml` binary: the clap tree, the optional TOML configuration
+//!   and the first-run welcome, the editor-driven flow, the stable
+//!   error codes and the JSON Schemas of what each command prints. It
+//!   is not part of the library contract.
 //!
 //! Two private modules, grammar and header, hold helpers shared by the
 //! compiler and interpreter.

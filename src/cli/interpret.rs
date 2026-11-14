@@ -5,11 +5,12 @@
 //! Aliased `mml read`, so it can be piped straight from
 //! `himalaya messages read --raw <id>` or any other MIME source.
 
-use std::{fmt, path::PathBuf, process};
+use std::{fmt, path::PathBuf};
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use pimalaya_cli::printer::Printer;
+use pimalaya_cli::{error::PartialOutcome, printer::Printer};
+use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::{
@@ -21,15 +22,9 @@ use crate::{
     pgp::MmlPgpVerdict,
 };
 
-/// Exit code reporting that a signature did not check out.
-///
-/// NOTE: distinct from 1, which every other failure uses, so a script
-/// can tell "could not read it" from "read it, do not trust it".
-const INVALID_SIGNATURE: i32 = 2;
-
 /// Interpret a MIME message back into an MML message.
 ///
-/// Exits 0 when the message carries no signature or a valid one, 2
+/// Exits 0 when the message carries no signature or a valid one, 3
 /// when a signature is invalid, and 1 on any other failure. The
 /// message is rendered either way.
 #[derive(Debug, Parser)]
@@ -65,7 +60,8 @@ pub struct InterpretCommand {
     #[arg(long)]
     pub save_attachments: bool,
     /// Directory where attachments are written when
-    /// `--save-attachments` is set. Defaults to `~/Downloads`.
+    /// `--save-attachments` is set. Defaults to the system temporary
+    /// directory.
     #[arg(long, value_name = "DIR")]
     pub save_attachments_dir: Option<PathBuf>,
 
@@ -139,14 +135,14 @@ impl InterpretCommand {
             .context("cannot interpret MIME message")?;
 
         let invalid = signatures.contains(&MmlPgpVerdict::Invalid);
+        let signatures = signatures.into_iter().map(SignatureOutput::from);
+        let signatures = signatures.collect();
 
         printer.out(InterpretOutput { mml, signatures })?;
 
-        // NOTE: a bad signature does not stop the message from being
-        // read, so it cannot be an error. It leaves through the exit
-        // code instead, the one channel a pipeline can act on.
+        // A bad signature does not stop the message from being read.
         if invalid {
-            process::exit(INVALID_SIGNATURE);
+            return Err(PartialOutcome::default().into());
         }
 
         Ok(())
@@ -163,14 +159,40 @@ fn flag(v: bool) -> Option<bool> {
 /// What `interpret` prints: the rendered MML, plus what came of any
 /// signature the message carried.
 ///
-/// NOTE: the plain rendering is the MML alone, so stdout stays the
-/// raw artifact a composer or editor can consume. Only `--json`
-/// surfaces the signatures, since that flag reformats the whole
-/// output rather than adding to it.
-#[derive(Debug, Serialize)]
-struct InterpretOutput {
-    mml: String,
-    signatures: Vec<MmlPgpVerdict>,
+/// The text form is the MML alone, the raw artifact a composer or an
+/// editor consumes; only `--json` surfaces the signatures.
+#[derive(Debug, Serialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct InterpretOutput {
+    /// The rendered MML message.
+    pub mml: String,
+    /// The verdict of each signature the message carried, in order.
+    pub signatures: Vec<SignatureOutput>,
+}
+
+/// The verdict of one signature.
+#[derive(Debug, Serialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SignatureOutput {
+    /// Whether the signature checks out.
+    pub valid: bool,
+    /// The fingerprint of the signing key, `null` when invalid.
+    pub fingerprint: Option<String>,
+}
+
+impl From<MmlPgpVerdict> for SignatureOutput {
+    fn from(verdict: MmlPgpVerdict) -> Self {
+        match verdict {
+            MmlPgpVerdict::Valid(fingerprint) => Self {
+                valid: true,
+                fingerprint: Some(fingerprint),
+            },
+            _ => Self {
+                valid: false,
+                fingerprint: None,
+            },
+        }
+    }
 }
 
 impl fmt::Display for InterpretOutput {

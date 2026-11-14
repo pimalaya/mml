@@ -1,7 +1,7 @@
 ---
 cairn: change
 id: first-run-wizard
-status: active
+status: abandoned
 created: 2026-08-14
 ---
 
@@ -40,3 +40,7 @@ For the same reason there is no "missing default" failure to name: no default is
 `MML_CONFIG` already exists and already splits on `:`, so nothing to do there.
 
 The wizard covers the identity and stops. The compose, reply and forward sections, the PGP block and the per-account overrides stay hand-written against the documented sample: they are preferences with defaults, not the thing standing between a newcomer and a working first run.
+
+## Abandoned
+
+Abandoned on 2026-11-14, never built: the family dropped setup wizards, and the-family-standards meets a bare `mml` with the shared welcome instead.

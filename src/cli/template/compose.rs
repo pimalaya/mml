@@ -3,7 +3,7 @@
 //! opening the editor or compiling to MIME. Use `mml compose` for
 //! the full edit and compile flow.
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use clap::Parser;
 use pimalaya_cli::printer::Printer;
 
@@ -11,6 +11,8 @@ use crate::{
     cli::{
         account::Account,
         args::{HeaderRawArgs, IdentityArgs},
+        error::{ErrorCode, FROM_MISSING, error},
+        template::TemplateOutput,
     },
     template::compose::{MmlTemplateComposeBuilder, MmlTemplateComposeSignatureStyle},
 };
@@ -43,7 +45,7 @@ impl TemplateComposeCommand {
         let signature = account.signature();
 
         let Some(from) = account.from else {
-            bail!("missing `From` email from both config and args");
+            return Err(error(ErrorCode::FromMissing, FROM_MISSING));
         };
 
         let tpl = MmlTemplateComposeBuilder {
@@ -56,6 +58,6 @@ impl TemplateComposeCommand {
         }
         .build()?;
 
-        printer.out(tpl)
+        printer.out(TemplateOutput::from(tpl))
     }
 }

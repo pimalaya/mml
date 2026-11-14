@@ -18,7 +18,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = ["compiler", "interpreter"]
-cli = ["dep:anyhow", "dep:ariadne", "dep:clap", "dep:edit", "dep:pimalaya-cli", "dep:pimalaya-config", "dep:serde", "dep:serde_json"]
+cli = ["compiler", "interpreter", "dep:anyhow", "dep:ariadne", "dep:clap", "dep:edit", "dep:pimalaya-cli", "dep:pimalaya-config", "dep:schemars", "dep:serde", "dep:serde_json"]
 compiler = ["dep:chumsky", "dep:shellexpand", "dep:tree_magic_mini"]
 interpreter = ["dep:nanohtml2text"]
 gpg = ["dep:gpgme"]
@@ -38,18 +38,24 @@ required-features = ["cli"]
 name = "mml"
 path = "src/lib.rs"
 
+[[test]]
+name = "cli"
+path = "tests/cli.rs"
+required-features = ["cli"]
+
 [build-dependencies]
-pimalaya-cli = { version = "0.2", default-features = false, features = ["build"], optional = true }
+pimalaya-cli = { version = "0.4", default-features = false, features = ["build"], optional = true }
 
 [dev-dependencies]
 concat-with = { version = "0.2", default-features = false }
+pimalaya-config = { version = "0.4", default-features = false, features = ["sample"] }
 tempfile = { version = "3", default-features = false, features = ["getrandom"] }
 
 [dependencies]
 anyhow = { version = "1", default-features = false, features = ["std"], optional = true }
 ariadne = { version = "0.6", default-features = false, optional = true }
 chumsky = { version = "0.13", default-features = false, features = ["std", "stacker"], optional = true }
-clap = { version = "4.4", default-features = false, features = ["color", "derive", "env", "error-context", "help", "std", "suggestions", "usage", "wrap_help"], optional = true }
+clap = { version = "4.4", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage"], optional = true }
 edit = { version = "0.1", default-features = false, features = ["better-path"], optional = true }
 gpgme = { version = "0.11", default-features = false, optional = true }
 log = { version = "0.4", default-features = false }
@@ -58,11 +64,16 @@ mail-parser = { version = "0.11", default-features = false }
 nanohtml2text = { version = "0.3", default-features = false, optional = true }
 once_cell = { version = "1.21", default-features = false, features = ["std"] }
 ouroboros = { version = "0.18", default-features = false }
-pimalaya-cli = { version = "0.2", default-features = false, features = ["prompt", "terminal"], optional = true }
-pimalaya-config = { version = "0.2", default-features = false, features = ["toml"], optional = true }
+pimalaya-cli = { version = "0.4", default-features = false, features = ["prompt", "terminal"], optional = true }
+pimalaya-config = { version = "0.4", default-features = false, features = ["toml"], optional = true }
 regex = { version = "1.12", default-features = false, features = ["perf", "std", "unicode"] }
+schemars = { version = "1", default-features = false, features = ["derive", "std"], optional = true }
 serde = { version = "1", default-features = false, features = ["derive", "std"], optional = true }
 serde_json = { version = "1", default-features = false, features = ["std"], optional = true }
-shellexpand = { version = "3.1", default-features = false, features = ["base-0", "tilde"], optional = true }
+shellexpand = { version = "3.1", default-features = false, features = ["base-0"], optional = true }
 thiserror = { version = "2", default-features = false, features = ["std"] }
 tree_magic_mini = { version = "3", default-features = false, optional = true }
+
+[patch.crates-io]
+pimalaya-cli = { path = "../cli" }
+pimalaya-config = { path = "../config" }

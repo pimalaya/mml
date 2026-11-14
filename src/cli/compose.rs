@@ -4,7 +4,7 @@
 //! compiled MIME. Refuses to start when stdout is redirected, see
 //! [`crate::cli::args::OutputArg::check_editor_can_run`].
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use clap::Parser;
 use pimalaya_cli::printer::Printer;
 
@@ -12,6 +12,8 @@ use crate::{
     cli::{
         account::Account,
         args::{HeaderRawArgs, IdentityArgs, OutputArg},
+        error::{ErrorCode, FROM_MISSING, error},
+        printer::rfc822,
         utils::editor::{compile_options, edit_loop},
     },
     template::compose::{MmlTemplateComposeBuilder, MmlTemplateComposeSignatureStyle},
@@ -53,7 +55,7 @@ impl ComposeCommand {
         let signature = account.signature();
 
         let Some(from) = account.from else {
-            bail!("missing `From` email from both config and args");
+            return Err(error(ErrorCode::FromMissing, FROM_MISSING));
         };
 
         let tpl = MmlTemplateComposeBuilder {
@@ -69,8 +71,8 @@ impl ComposeCommand {
         let opts = compile_options(account.compose_format, account.compose_flowed_column);
 
         match edit_loop(tpl, opts, output.path().is_some())? {
-            Some(mime) => printer.out(String::from_utf8(mime)?),
-            None => bail!("aborted by user"),
+            Some(mime) => printer.out_bytes(rfc822(mime)),
+            None => Err(error(ErrorCode::Aborted, "Aborted by user")),
         }
     }
 }

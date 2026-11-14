@@ -18,7 +18,7 @@ The crate SHALL expose a template layer building compose, reply and forward draf
 The crate SHALL expose the PGP data types in `pgp` and the coroutine contract in `coroutine`, both unconditional. Only the gpg backend, `pgp::gpg`, sits behind a feature. The machinery each pipeline needs to suspend lives next to it: `compiler::crypto` holds the post-order worklist, `interpreter::layer` the layer queue.
 
 ### Requirement: CLI is optional
-The `mml` binary SHALL live behind the `cli` feature and require it. The editor-driven `compose`, `reply`, `forward` and `mailto` subcommands require the `compiler` and `interpreter` features together. The CLI module carries the clap tree, the TOML configuration, the editor-driven flow and the PGP driver, none of it part of the library API. Its contract is the cli capability.
+The `mml` binary SHALL live behind the `cli` feature and require it, and `cli` SHALL turn `compiler` and `interpreter` on. The CLI module carries the clap tree, the TOML configuration, the editor-driven flow, the PGP driver, the error codes and the JSON Schemas, none of it part of the library API. Its contract is the cli capability.
 
 ### Requirement: File layout
 The source tree SHALL follow the Pimalaya naming rules: snake_case files, no `#[path]`, and no `foo/mod.rs` plus `foo/foo.rs` inception. A module carrying its own code is the sibling `foo.rs` next to its `foo/` folder; a folder whose `mod.rs` only aggregates stays a pure aggregator.

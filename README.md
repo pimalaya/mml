@@ -117,15 +117,19 @@ nix run
 
 ## Configuration
 
-A sample [config.sample.toml](./config.sample.toml) is shipped at the repository root. Drop it into one of:
+The configuration is optional: with none, every command runs on its defaults and its flags. It only saves typing your identity and your preferences on every draft.
+
+A bare `mml` with no configuration greets you with the commands creating one from the documented [config.sample.toml](./config.sample.toml): a copy of the sample a package or a release archive installs as share/doc/mml/config.sample.toml, or a download of it. MML writes no configuration itself, and has no setup wizard.
+
+The configuration is read from every one of these that exists, each a layer merged on top of the ones before:
 
 - $XDG_CONFIG_HOME/mml/config.toml
 - $HOME/.config/mml/config.toml
 - $HOME/.mmlrc
 
-Override the path with `-c <PATH>` or `MML_CONFIG=<PATH>`.
+`-c <PATH>` replaces them, and must exist. Repeat it to merge several files, the first one the base: a public configuration and a private one combine this way.
 
-CLI flags always win; config values fill in the blanks. Pick an account with `-a <NAME>`, or flag one entry `default = true`.
+CLI flags always win; config values fill in the blanks. Pick an account with `-a <NAME>`, or flag one entry `default = true`; with no account marked default, the top-level keys apply alone. A key the configuration does not know is refused, naming it.
 
 ## Usage
 
@@ -136,6 +140,8 @@ See documentation at [docs.rs](https://docs.rs/mime-meta-language/latest/mml).
 ### CLI
 
 Every command documents itself: `mml --help` lists them, `mml <command> --help` details one. A few real-world lines follow.
+
+Every command exits 0 on success, 1 when it fails, printing the failure object, and 2 when the command line itself is refused. `interpret` exits 3 when the message carries an invalid signature, after printing it. Under `--json`, a failure prints `{"code", "error", "sources", "backtrace"}`, `code` being a stable kebab-case name (`mml-invalid`, `mime-invalid`, `from-missing`, `pgp-unavailable`, `pgp-failed`, `aborted`, or `usage-invalid` for a refused command line) or `null`. A compiled message prints as `{"data", "size", "mime"}`, `data` in base64; `interpret` prints `{"mml", "signatures"}`, and a template `{"content", "cursor"}`. `mml json-schema` writes the JSON Schema of each.
 
 Every command reads its source from stdin and writes its artifact to stdout by default. `-i, --input <PATH>` reads a file instead, `-o, --output <PATH>` writes one, and `-` names the stream explicitly in either (use `./-` for a file actually called `-`). `--output` is independent of `--json`: the first picks where the payload lands, the second picks its format, so `--json --output result.json` writes JSON to that file.
 

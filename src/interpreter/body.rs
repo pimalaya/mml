@@ -288,7 +288,7 @@ impl MmlMimeBodyInterpreter {
                 let html = Self::escape_mml_markup(html);
                 tpl.push_str(&html);
             } else {
-                let html = html2text(&html);
+                let html = html2text(html);
                 let html = Self::escape_mml_markup(html);
 
                 if self.show_parts {
@@ -408,36 +408,21 @@ impl MmlMimeBodyInterpreter {
 
                         match part {
                             Some(part) => Some(part),
-                            None => match parts.next() {
-                                Some(part) => Some(self.interpret_part(msg, part, pgp)),
-                                None => None,
-                            },
+                            None => parts.next().map(|part| self.interpret_part(msg, part, pgp)),
                         }
                     }
-                    MmlFilterParts::Only(ctype) => {
-                        match parts
-                            .clone()
-                            .find(|part| get_ctype(part).starts_with(ctype))
-                        {
-                            Some(part) => Some(self.interpret_part(msg, part, pgp)),
-                            None => None,
-                        }
-                    }
-                    MmlFilterParts::Include(ctypes) => {
-                        match parts.clone().find(|part| ctypes.contains(&get_ctype(part))) {
-                            Some(part) => Some(self.interpret_part(msg, part, pgp)),
-                            None => None,
-                        }
-                    }
-                    MmlFilterParts::Exclude(ctypes) => {
-                        match parts
-                            .clone()
-                            .find(|part| !ctypes.contains(&get_ctype(part)))
-                        {
-                            Some(part) => Some(self.interpret_part(msg, part, pgp)),
-                            None => None,
-                        }
-                    }
+                    MmlFilterParts::Only(ctype) => parts
+                        .clone()
+                        .find(|part| get_ctype(part).starts_with(ctype))
+                        .map(|part| self.interpret_part(msg, part, pgp)),
+                    MmlFilterParts::Include(ctypes) => parts
+                        .clone()
+                        .find(|part| ctypes.contains(&get_ctype(part)))
+                        .map(|part| self.interpret_part(msg, part, pgp)),
+                    MmlFilterParts::Exclude(ctypes) => parts
+                        .clone()
+                        .find(|part| !ctypes.contains(&get_ctype(part)))
+                        .map(|part| self.interpret_part(msg, part, pgp)),
                 };
 
                 if let Some(part) = part {

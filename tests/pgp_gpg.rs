@@ -350,3 +350,43 @@ fn a_valid_signature_is_reported_as_a_verdict() {
         coroutine.verdicts(),
     );
 }
+
+#[cfg(feature = "cli")]
+#[test]
+fn the_binary_exits_3_on_an_invalid_signature_and_reports_it() {
+    use std::{io::Write, process::Stdio};
+
+    let store = Store::new("verdicts-cli", &["Alice <alice@localhost>"]);
+
+    let mime = store
+        .compile(&mml(
+            "<#part sign=pgpmime sender=alice@localhost>original<#/part>",
+        ))
+        .unwrap();
+    let tampered = String::from_utf8_lossy(&mime).replace("original", "tampered");
+
+    let mut child = Command::new(env!("CARGO_BIN_EXE_mml"))
+        .args(["-c", "/dev/null", "--json", "interpret"])
+        .env("GNUPGHOME", &store.home_dir)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    let mut stdin = child.stdin.take().unwrap();
+    stdin.write_all(tampered.as_bytes()).unwrap();
+    drop(stdin);
+
+    let output = child.wait_with_output().unwrap();
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+
+    assert_eq!(output.status.code(), Some(3));
+    assert!(
+        value["mml"].as_str().unwrap().contains("tampered"),
+        "{value}"
+    );
+    assert_eq!(
+        value["signatures"],
+        serde_json::json!([{ "valid": false, "fingerprint": null }])
+    );
+}

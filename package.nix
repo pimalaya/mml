@@ -67,9 +67,11 @@ rustPlatform.buildRustPackage (finalAttrs: {
           lib.getExe buildPackages.${finalAttrs.pname};
     in
     ''
-      mkdir -p $out/share/{completions,man}
+      mkdir -p $out/share/{completions,man,schemas}
+      install -Dm644 config.sample.toml "$out"/share/doc/${finalAttrs.meta.mainProgram}/config.sample.toml
       ${exe} manual -d "$out"/share/man
       ${exe} completion -d "$out"/share/completions bash elvish fish powershell zsh
+      ${exe} json-schema -d "$out"/share/schemas
     ''
     + lib.optionalString installManPages ''
       installManPage "$out"/share/man/*

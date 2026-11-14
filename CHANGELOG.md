@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a welcome on a bare `mml` run without a configuration: it names the missing file and prints the commands creating it from the shipped sample configuration, or downloading it. With a configuration, a bare `mml` prints the help. MML has no setup wizard and writes no configuration.
+
+- Added a stable `code` to the failure object printed under `--json`: `mml-invalid`, `mime-invalid`, `from-missing`, `pgp-unavailable`, `pgp-failed`, `aborted`, `usage-invalid` for a refused command line, `null` otherwise.
+
+- Added the `json-schema` command, writing the JSON Schema of what each command prints. The Nix package installs them under share/schemas.
+
+- Added config.sample.toml to the Nix package and to install.sh, as share/doc/mml/config.sample.toml, where the welcome finds it.
+
 - Added RFC 3676 `format=flowed` plain text ([#7](https://github.com/pimalaya/mml/issues/7)). Compiling breaks lines longer than `MmlBodyCompiler::flowed_column` (72 by default) with soft breaks, and interpreting joins them back, so a paragraph written as one line reflows to the reader's window. Opt-in through `MmlBodyCompiler::format`, the `format` and `flowed-column` keys of `[compose]`, `[reply]` and `[forward]`, or per part with `<#part format=flowed|fixed>`. Signed and encrypted parts stay fixed.
 
 - Added the `gpg` cargo feature, off by default, serving the `WantsPgp*` yields through gpgme. GPG owns key discovery, the agent and the passphrase prompt; `pgp::gpg::MmlPgpGpg` is the only place in the crate performing cryptography, and the coroutines never reach it.
@@ -27,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Each layer owns its bytes through `MmlMimeLayer`, a `Cow<[u8]>` so the first layer borrows the caller's input at no cost, behind ouroboros so the parsed `mail_parser::Message` can borrow them.
 
-- Added signature reporting. `MmlInterpret::verdicts` exposes every verdict a run collected. `mml interpret` turns them into a distinct exit code, 0 with no signature or a valid one, 2 with an invalid one, 1 on any other failure, and reports them under `--json` as a `signatures` array. The plain rendering stays the raw MML.
+- Added signature reporting. `MmlInterpret::verdicts` exposes every verdict a run collected. `mml interpret` turns them into a distinct exit code, 0 with no signature or a valid one, 3 with an invalid one, 1 on any other failure, and reports them under `--json` as a `signatures` array of `{valid, fingerprint}`. The plain rendering stays the raw MML.
 
   The message renders either way, since a bad signature is a reason to distrust it rather than to hide it. The verdict never enters the rendered body, where it would be indistinguishable from text the sender wrote.
 
@@ -51,9 +59,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING**: `-c, --config` takes one path per flag, repeated to merge several files, the first one the base. A value is no longer split on `:`.
+
+- **BREAKING**: a `-c` path that does not exist is refused, where it silently ran on the defaults. With no `-c`, a missing configuration is still the empty one, and every default location that exists is now read, each merged on top of the previous one.
+
+- **BREAKING**: several accounts marked `default = true` are refused, naming them, where one was taken at random.
+
+- **BREAKING**: `compile`, `compose`, `reply`, `forward` and `mailto` print the compiled message under `--json` as `{data, size, mime}`, `data` in base64 and `mime` `message/rfc822`, where they printed a JSON string. Text output stays the raw message.
+
+- **BREAKING**: `compile` fails, exiting 1 coded `mml-invalid`, on MML that does not parse, where it exited 0. Its diagnostics go to stderr, where they went to stdout, and only in text mode.
+
+- **BREAKING**: a command line the grammar refuses under `--json` prints the failure object coded `usage-invalid` on stdout, where clap printed its text on stderr. It still exits 2.
+
 - **BREAKING**: `MmlBodyCompiler` is no longer a unit struct. It carries `format` and `flowed_column`, so build it with `MmlBodyCompiler::default()` or a literal.
 
 - **BREAKING**: renamed every plural command to its singular, the plural staying as a hidden alias: `templates` becomes `template` (`tpl` still works), `completions` and `manuals` become `completion` and `manual`.
+
+- Changed text written to a terminal to have its control and bidi characters replaced with U+FFFD, line breaks and tabs kept, so a rendered message cannot drive the terminal. A file or a pipe still gets the artifact unchanged.
+
+- Changed piped `--json` output to end each value with a newline.
+
+- Changed the `cli` cargo feature to turn `compiler` and `interpreter` on, so `--no-default-features --features cli` builds.
+
+- Changed config.sample.toml to the family shape: one `[accounts.example]` table with dotted keys, the defaults active, the alternatives commented. It is tested with each commented line uncommented.
+
+- Changed help to print as written, without colour or wrapping to the terminal width.
+
+- Moved to pimalaya-cli and pimalaya-config 0.4.
 
 - Moved quote rendering out of the reply and forward template builders. `MmlTemplateReplyBuilder::build` and `MmlTemplateForwardBuilder::build` now take the rendered quote as a second argument, and each type exposes `quote_options()` describing how that quote should be rendered.
 
@@ -77,6 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- **BREAKING**: Removed the `MML_CONFIG` environment variable. Pass `-c <PATH>`, once per file.
+
 - Removed the optional leading positional output path on `compose`, `reply` and `forward`. Use `--output <PATH>` instead, which no longer depends on positional order.
 
 - Removed the trailing positional `MESSAGE` argument from every command. Sources now come from `--input <PATH>` or stdin.
@@ -92,6 +126,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `interpret` and `read` printing control characters instead of the encrypted part. The PGP-free path collects no request, so the placeholder marking where a decrypted layer belongs was never resolved. It now renders as `<#part type=application/pgp-encrypted>`, the same as an `Unavailable` answer.
 
 - Fixed `compose`, `reply` and `forward` hanging when their output would land on a redirected stdout. The editor inherits that stream, so its interface never reaches the terminal. The commands now refuse to start, with an error naming the fix.
+
+- Fixed the man pages and shell completions being named `mime-meta-language`, the package name, instead of `mml`.
+
+- Fixed `template forward --quote-headline` setting the reply headline instead of the forward one.
+
+- Fixed `reply --quote-headline` and `forward --quote-headline` not turning `\n` into a newline, as their help says and the template commands do.
+
+- Fixed the `--save-attachments-dir` help naming `~/Downloads` as the default, which is the system temporary directory.
 
 ## [1.1.1] - 2026-06-07
 

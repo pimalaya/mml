@@ -1,34 +1,62 @@
 //! `mml` binary entry point.
 //!
-//! Parses the CLI, opens the printer sink named by `--output`, loads
-//! the TOML config, then hands over to [`mml::cli::Command::execute`].
-//! The library architecture lives in the src/lib.rs header.
+//! Parses the CLI, opens the printer sink named by `--output`, then
+//! hands over to [`mml::cli::Command::execute`], or meets a bare
+//! invocation. A person missing the configuration a bare `mml` or a
+//! `-c` path looked for meets the welcome on stderr, a script or a JSON
+//! caller the error.
+//!
+//! Exits 0 on success, 1 with the failure object, 2 on a command line
+//! the grammar refuses, 3 when `interpret` met an invalid signature. The
+//! library architecture lives in the src/lib.rs header.
+
+use std::process;
 
 use anyhow::Result;
-use clap::Parser;
-use pimalaya_cli::{error::ErrorReport, log::Logger};
-use pimalaya_config::toml::TomlConfig;
-
-use mml::cli::{Cli, config::Config, printer::MmlPrinter};
+use mml::cli::{self, Cli, error::ErrorCode, printer::MmlPrinter};
+use pimalaya_cli::{
+    clap::parse,
+    error::ErrorReport,
+    log::Logger,
+    welcome::{is_wanted, shipped_sample},
+};
+use pimalaya_config::toml::ConfigMissingError;
 
 fn main() {
-    let cli = Cli::parse();
+    let cli: Cli = parse();
 
     // NOTE: the error report always goes to stdout, even when
     // `--output` redirects the artifact to a file: a failure belongs
     // on the stream the user is watching.
     let mut errors = MmlPrinter::stdout(&cli.json);
+    let config_paths = cli.config.paths.clone();
 
-    let printer = MmlPrinter::new(&cli.json, &cli.output);
-    let mut printer = ErrorReport::eval(&mut errors, printer);
+    let result = execute(cli);
 
-    let result = execute(cli, &mut printer);
-    ErrorReport::eval(&mut errors, result);
+    if let Err(err) = &result
+        && let Some(missing) = err.downcast_ref::<ConfigMissingError>()
+        && is_wanted(&errors)
+    {
+        let sample = shipped_sample("mml");
+        let welcome = cli::welcome(&missing.path, &config_paths, sample.as_deref());
+        eprint!("{welcome}");
+        process::exit(1);
+    }
+
+    ErrorReport::<ErrorCode>::eval_coded(&mut errors, result)
 }
 
-fn execute(cli: Cli, printer: &mut MmlPrinter) -> Result<()> {
+fn execute(cli: Cli) -> Result<()> {
     Logger::try_init(&cli.log)?;
-    let account = cli.account.name.as_deref();
-    let config = Config::from_paths_or_default(&cli.config_paths)?.unwrap_or_default();
-    cli.command.execute(printer, &cli.output, config, account)
+
+    let config_paths = cli.config.paths.as_slice();
+    let account_name = cli.account.name.as_deref();
+
+    match cli.command {
+        Some(command) => {
+            let mut printer = MmlPrinter::new(&cli.json, &cli.output)?;
+            command.execute(&mut printer, &cli.output, config_paths, account_name)
+        }
+        None => cli::meet_bare_invocation(config_paths),
+    }
 }
