@@ -44,11 +44,11 @@ path = "tests/cli.rs"
 required-features = ["cli"]
 
 [build-dependencies]
-pimalaya-cli = { version = "0.4", default-features = false, features = ["build"], optional = true }
+pimalaya-cli = { version = "0.5", default-features = false, features = ["build"], optional = true }
 
 [dev-dependencies]
 concat-with = { version = "0.2", default-features = false }
-pimalaya-config = { version = "0.4", default-features = false, features = ["sample"] }
+pimalaya-config = { version = "0.5", default-features = false, features = ["sample"] }
 tempfile = { version = "3", default-features = false, features = ["getrandom"] }
 
 [dependencies]
@@ -64,8 +64,8 @@ mail-parser = { version = "0.11", default-features = false }
 nanohtml2text = { version = "0.3", default-features = false, optional = true }
 once_cell = { version = "1.21", default-features = false, features = ["std"] }
 ouroboros = { version = "0.18", default-features = false }
-pimalaya-cli = { version = "0.4", default-features = false, features = ["prompt", "terminal"], optional = true }
-pimalaya-config = { version = "0.4", default-features = false, features = ["toml"], optional = true }
+pimalaya-cli = { version = "0.5", default-features = false, features = ["prompt", "terminal"], optional = true }
+pimalaya-config = { version = "0.5", default-features = false, features = ["toml"], optional = true }
 regex = { version = "1.12", default-features = false, features = ["perf", "std", "unicode"] }
 schemars = { version = "1", default-features = false, features = ["derive", "std"], optional = true }
 serde = { version = "1", default-features = false, features = ["derive", "std"], optional = true }
@@ -73,7 +73,3 @@ serde_json = { version = "1", default-features = false, features = ["std"], opti
 shellexpand = { version = "3.1", default-features = false, features = ["base-0"], optional = true }
 thiserror = { version = "2", default-features = false, features = ["std"] }
 tree_magic_mini = { version = "3", default-features = false, optional = true }
-
-[patch.crates-io]
-pimalaya-cli = { git = "https://github.com/pimalaya/cli", rev = "8190dc544e277aeeba6acc43817100179f19643b" }
-pimalaya-config = { git = "https://github.com/pimalaya/config", rev = "d5a33cba3fe9826b82f15a479043a7f79ca742ce" }

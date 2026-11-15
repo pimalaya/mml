@@ -67,7 +67,7 @@ MML joins the standard the Pimalaya CLIs share, as 2.0.0. MIGRATION.md lists wha
 
 - **BREAKING**: several accounts marked `default = true` are refused, naming them, where one was taken at random.
 
-- **BREAKING**: `-a default` names an account called `default`, where it took the account marked default; omit `-a` for that one (pimalaya-config d5a33cb).
+- **BREAKING**: `-a default` names an account called `default`, where it took the account marked default; omit `-a` for that one (pimalaya-config 0.5).
 
 - **BREAKING**: `compile`, `compose`, `reply`, `forward` and `mailto` print the compiled message under `--json` as `{data, size, mime}`, `data` in base64 and `mime` `message/rfc822`, where they printed a JSON string. Text output stays the raw message.
 
@@ -89,7 +89,7 @@ MML joins the standard the Pimalaya CLIs share, as 2.0.0. MIGRATION.md lists wha
 
 - Changed help to print as written, without colour or wrapping to the terminal width.
 
-- Moved to pimalaya-cli and pimalaya-config 0.4.
+- Moved to pimalaya-cli and pimalaya-config 0.5.
 
 - Moved quote rendering out of the reply and forward template builders. `MmlTemplateReplyBuilder::build` and `MmlTemplateForwardBuilder::build` now take the rendered quote as a second argument, and each type exposes `quote_options()` describing how that quote should be rendered.
 
