@@ -27,7 +27,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   inherit buildNoDefaultFeatures;
 
   pname = "mml";
-  version = "1.1.1";
+  version = "2.0.0";
   cargoHash = "";
 
   src = fetchFromGitHub {

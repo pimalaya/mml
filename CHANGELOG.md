@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+MML joins the standard the Pimalaya CLIs share, as 2.0.0. MIGRATION.md lists what to act on when upgrading from 1.x.
+
 ### Added
 
 - Added a welcome on a bare `mml` run without a configuration: it names the missing file and prints the commands creating it from the shipped sample configuration, or downloading it. With a configuration, a bare `mml` prints the help. MML has no setup wizard and writes no configuration.
