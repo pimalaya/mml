@@ -292,7 +292,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -359,7 +359,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -767,6 +767,7 @@ dependencies = [
 [[package]]
 name = "pimalaya-cli"
 version = "0.4.0"
+source = "git+https://github.com/pimalaya/cli?rev=9952b7f1c6a2cb9890e06c32ea73ed873b00995f#9952b7f1c6a2cb9890e06c32ea73ed873b00995f"
 dependencies = [
  "anyhow",
  "base64-codec",
@@ -789,6 +790,8 @@ dependencies = [
 [[package]]
 name = "pimalaya-config"
 version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "10789cb95e1f226e0f85b2f52eed57c75a88fac1008f371e383f4aa05d2311ba"
 dependencies = [
  "anyhow",
  "dirs",
@@ -958,7 +961,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1201,7 +1204,7 @@ dependencies = [
  "getrandom",
  "once_cell",
  "rustix 1.1.6",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

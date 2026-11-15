@@ -75,5 +75,4 @@ thiserror = { version = "2", default-features = false, features = ["std"] }
 tree_magic_mini = { version = "3", default-features = false, optional = true }
 
 [patch.crates-io]
-pimalaya-cli = { path = "../cli" }
-pimalaya-config = { path = "../config" }
+pimalaya-cli = { git = "https://github.com/pimalaya/cli", rev = "9952b7f1c6a2cb9890e06c32ea73ed873b00995f" }
