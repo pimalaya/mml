@@ -3,9 +3,9 @@
 //!
 //! Both are resumable state machines: they never call a PGP backend,
 //! they yield what they need and continue once the caller resumes them
-//! with a [`MmlPgpAnswer`]. Every exchange therefore ends on
-//! [`MmlYield::Ok`] or [`MmlYield::Err`], with any number of
-//! `WantsPgp*` steps in between.
+//! with a [`MmlPgpAnswer`](crate::pgp::MmlPgpAnswer). Every exchange
+//! therefore ends on [`MmlYield::Ok`] or [`MmlYield::Err`], with any
+//! number of `WantsPgp*` steps in between.
 
 use crate::error::MmlError;
 
@@ -21,7 +21,7 @@ pub enum MmlYield<T> {
     /// The coroutine failed; resuming it again is a logic error.
     Err(MmlError),
     /// Encrypt the payload for the given recipients, then resume with
-    /// [`MmlPgpAnswer::Bytes`].
+    /// [`MmlPgpAnswer::Bytes`](crate::pgp::MmlPgpAnswer::Bytes).
     WantsPgpEncrypt {
         /// The cleartext to encrypt.
         plain: Vec<u8>,
@@ -30,10 +30,10 @@ pub enum MmlYield<T> {
     },
     /// Decrypt an OpenPGP message, the second part of a
     /// `multipart/encrypted` (RFC 3156 section 4), then resume with
-    /// [`MmlPgpAnswer::Bytes`].
+    /// [`MmlPgpAnswer::Bytes`](crate::pgp::MmlPgpAnswer::Bytes).
     WantsPgpDecrypt(Vec<u8>),
     /// Sign the payload as the given identity, then resume with
-    /// [`MmlPgpAnswer::Bytes`].
+    /// [`MmlPgpAnswer::Bytes`](crate::pgp::MmlPgpAnswer::Bytes).
     WantsPgpSign {
         /// The cleartext to sign.
         plain: Vec<u8>,
@@ -42,7 +42,7 @@ pub enum MmlYield<T> {
     },
     /// Verify a detached signature over the signed part, the shape of
     /// a `multipart/signed` (RFC 3156 section 5), then resume with
-    /// [`MmlPgpAnswer::Verdict`].
+    /// [`MmlPgpAnswer::Verdict`](crate::pgp::MmlPgpAnswer::Verdict).
     WantsPgpVerify {
         /// The exact bytes covered by the signature.
         signed: Vec<u8>,

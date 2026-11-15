@@ -1,5 +1,5 @@
 //! MML → MIME compilation: the [`message`] entry point over the
-//! [`body`] and [`parser`] layers.
+//! [`body`] and `parser` layers.
 
 pub mod body;
 pub mod crypto;
