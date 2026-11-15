@@ -10,6 +10,7 @@ v2 brings MML to the Pimalaya family standards: one configuration path per `-c`,
 - **`-c` takes one path per flag.** A value is no longer split on `:`. Repeat the flag to merge several files, the first one the base: `-c public.toml -c private.toml`.
 - **A `-c` path that does not exist is refused**, where v1 ran on the defaults. With no `-c`, every default location that exists is read, each merged on top of the previous one, where v1 read the first one found.
 - **Several `default = true` accounts are refused**, naming them, where v1 took one at random. Keep it on one account across the merged files.
+- **`-a default` names an account called `default`**, where it took the account marked default. Omit `-a` to take that one.
 - **An unknown key fails the configuration**, naming it: a typo no longer passes silently. The shipped config.sample.toml (share/doc/mml/config.sample.toml in releases and packages) lists every key MML reads.
 
 ### Command line
@@ -24,7 +25,7 @@ v2 brings MML to the Pimalaya family standards: one configuration path per `-c`,
 - **`compile`, `compose`, `reply`, `forward` and `mailto` print `{data, size, mime}` under `--json`**, `data` the message in base64 and `mime` `message/rfc822`, where v1 printed a JSON string. Decode it with `jq -r .data | base64 -d`. Text output stays the raw message.
 - **`compile` fails on MML that does not parse**, exiting 1 with the failure object coded `mml-invalid`, where v1 exited 0. Its diagnostics go to stderr, and only in text mode.
 - **`interpret` exits 3 on an invalid signature**, 0 with no signature or a valid one, 1 on any other failure. Under `--json` it prints `{mml, signatures}`, each signature `{valid, fingerprint}`.
-- **Every failure prints the failure object** under `--json`, with a stable `code` (`mml-invalid`, `mime-invalid`, `from-missing`, `pgp-unavailable`, `pgp-failed`, `aborted`, `usage-invalid`, or `null`). Read `code` rather than matching the message. A command line the grammar refuses still exits 2, now printing that object coded `usage-invalid` on stdout under `--json`.
+- **Every failure prints the failure object** under `--json`, with a stable `code` (`mml-invalid`, `mime-invalid`, `from-missing`, `pgp-unavailable`, `pgp-failed`, `aborted`, `account-missing`, `account-default-several`, `usage-invalid`, or `null`). Read `code` rather than matching the message. A command line the grammar refuses still exits 2, now printing that object coded `usage-invalid` on stdout under `--json`.
 - **Text written to a terminal is sanitized**: control and bidi characters become U+FFFD, line breaks and tabs kept. A file or a pipe still gets the bytes unchanged.
 - `json-schema` writes the schema of what each command prints; packages install them under share/schemas.
 

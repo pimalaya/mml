@@ -13,7 +13,7 @@ MML joins the standard the Pimalaya CLIs share, as 2.0.0. MIGRATION.md lists wha
 
 - Added a welcome on a bare `mml` run without a configuration: it names the missing file and prints the commands creating it from the shipped sample configuration, or downloading it. With a configuration, a bare `mml` prints the help. MML has no setup wizard and writes no configuration.
 
-- Added a stable `code` to the failure object printed under `--json`: `mml-invalid`, `mime-invalid`, `from-missing`, `pgp-unavailable`, `pgp-failed`, `aborted`, `usage-invalid` for a refused command line, `null` otherwise.
+- Added a stable `code` to the failure object printed under `--json`: `mml-invalid`, `mime-invalid`, `from-missing`, `pgp-unavailable`, `pgp-failed`, `aborted`, `account-missing` for a name `-a` gives that no account has (`default` among them, a name like any other), `account-default-several` for several accounts marked default, `usage-invalid` for a refused command line, `null` otherwise.
 
 - Added the `json-schema` command, writing the JSON Schema of what each command prints. The Nix package installs them under share/schemas.
 
@@ -66,6 +66,8 @@ MML joins the standard the Pimalaya CLIs share, as 2.0.0. MIGRATION.md lists wha
 - **BREAKING**: a `-c` path that does not exist is refused, where it silently ran on the defaults. With no `-c`, a missing configuration is still the empty one, and every default location that exists is now read, each merged on top of the previous one.
 
 - **BREAKING**: several accounts marked `default = true` are refused, naming them, where one was taken at random.
+
+- **BREAKING**: `-a default` names an account called `default`, where it took the account marked default; omit `-a` for that one (pimalaya-config d5a33cb).
 
 - **BREAKING**: `compile`, `compose`, `reply`, `forward` and `mailto` print the compiled message under `--json` as `{data, size, mime}`, `data` in base64 and `mime` `message/rfc822`, where they printed a JSON string. Text output stays the raw message.
 

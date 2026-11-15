@@ -12,7 +12,8 @@ use std::io::{IsTerminal, stderr};
 use anyhow::Error;
 use ariadne::{Color, Config, Label, Report, ReportKind, Source};
 use chumsky::error::Rich;
-use pimalaya_cli::error::{CodedError, code_of};
+use pimalaya_cli::error::{CodedError, with_code};
+use pimalaya_config::toml::AccountError;
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -34,6 +35,10 @@ pub enum ErrorCode {
     PgpFailed,
     /// The person aborted the draft from the post-edit prompt.
     Aborted,
+    /// No account has the name `-a` gives.
+    AccountMissing,
+    /// Several accounts are marked default and none was named.
+    AccountDefaultSeveral,
 }
 
 impl ErrorCode {
@@ -109,40 +114,35 @@ pub fn mml_invalid(errs: &[Rich<'static, char>], source: &str, diagnose: bool) -
     err.context("Cannot parse MML message")
 }
 
-/// Gives a failure the code of the library cause it carries, its
-/// messages unchanged, and leaves any other failure as it is.
-///
-/// The chain is rebuilt with a [`CodedError`] at its root, where the
-/// shared report finds it, each message kept at its place.
+/// Gives a failure the code of the library or configuration cause it
+/// carries, its messages unchanged, and leaves any other failure as it
+/// is (see [`with_code`]).
 pub fn coded(err: Error) -> Error {
-    if code_of::<ErrorCode>(&err).is_some() {
-        return err;
-    }
+    with_code(err, code)
+}
 
-    let code = err
-        .chain()
-        .find_map(|cause| cause.downcast_ref::<MmlError>())
-        .and_then(ErrorCode::of);
+/// The code of the library or configuration cause in the chain.
+fn code(err: &Error) -> Option<ErrorCode> {
+    err.chain().find_map(|cause| {
+        if let Some(err) = cause.downcast_ref::<MmlError>() {
+            return ErrorCode::of(err);
+        }
 
-    let Some(code) = code else {
-        return err;
-    };
-
-    let mut messages: Vec<String> = err.chain().map(ToString::to_string).collect();
-    let root = messages.pop().unwrap_or_default();
-    let mut coded = error(code, root);
-
-    for message in messages.into_iter().rev() {
-        coded = coded.context(message);
-    }
-
-    coded
+        match cause.downcast_ref::<AccountError>()? {
+            AccountError::Missing { .. } => Some(ErrorCode::AccountMissing),
+            AccountError::SeveralDefaults(_) => Some(ErrorCode::AccountDefaultSeveral),
+            // NOTE: no account marked default is the global layer alone,
+            // never a failure.
+            AccountError::NoDefault => None,
+        }
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use anyhow::{Context, anyhow};
     use pimalaya_cli::error::code_of;
+    use pimalaya_config::toml::AccountError;
 
     use crate::{
         cli::error::{ErrorCode, coded},
@@ -161,6 +161,28 @@ mod tests {
         assert_eq!(code_of::<ErrorCode>(&err), Some(ErrorCode::PgpUnavailable));
         assert_eq!(format!("{err:#}"), before);
         assert_eq!(err.chain().count(), 2);
+    }
+
+    #[test]
+    fn an_account_refusal_is_coded() {
+        let missing = AccountError::Missing {
+            name: "default".into(),
+            names: vec!["work".into()],
+        };
+        let err = Err::<(), _>(missing)
+            .context("Cannot take account")
+            .unwrap_err();
+        assert_eq!(
+            code_of::<ErrorCode>(&coded(err)),
+            Some(ErrorCode::AccountMissing)
+        );
+
+        let several = AccountError::SeveralDefaults(vec!["a".into(), "b".into()]);
+        let err = anyhow::Error::from(several);
+        assert_eq!(
+            code_of::<ErrorCode>(&coded(err)),
+            Some(ErrorCode::AccountDefaultSeveral)
+        );
     }
 
     #[test]
