@@ -35,7 +35,7 @@ pimalaya.mkDefault (
         installShellCompletions = false;
         installManPages = false;
         buildNoDefaultFeatures = !defaultFeatures;
-        buildFeatures = lib.splitString "," features;
+        buildFeatures = lib.filter (feature: feature != "") (lib.splitString "," features);
       }
     );
   }
