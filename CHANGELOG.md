@@ -126,6 +126,7 @@ MML joins the standard the Pimalaya CLIs share, as 2.0.0. MIGRATION.md lists wha
 
 ### Fixed
 
+- Fixed install.sh saving an HTTP error page as the archive and letting `tar` fail on it: it downloads with `curl -fsSLo` and stops on the error.
 - Fixed `compile` silently ignoring `sign` and `encrypt`, so a part marked `encrypt=pgpmime` compiled and shipped in the clear. `MmlCompileOptions::compile` now drives `MmlCompile` with no backend, which aborts on any crypto request. `MmlInterpretOptions::interpret` drives `MmlInterpret` the same way, so both paths and the coroutines share one implementation.
 
 - Fixed `interpret` and `read` printing control characters instead of the encrypted part. The PGP-free path collects no request, so the placeholder marking where a decrypted layer belongs was never resolved. It now renders as `<#part type=application/pgp-encrypted>`, the same as an `Unavailable` answer.

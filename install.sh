@@ -45,7 +45,7 @@ tmpdir=$(mktemp -d) || die "Cannot create temporary directory"
 trap "rm -rf $tmpdir" EXIT
 
 echo "Downloading latest $system release…"
-curl -sLo "$tmpdir/mml.tgz" \
+curl -fsSLo "$tmpdir/mml.tgz" \
      "$RELEASES_URL/latest/download/mml.$target.tgz"
 
 echo "Installing binary…"
