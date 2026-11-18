@@ -48,7 +48,7 @@ pimalaya-cli = { version = "0.6", default-features = false, features = ["build"]
 
 [dev-dependencies]
 concat-with = { version = "0.2", default-features = false }
-pimalaya-config = { version = "0.5", default-features = false, features = ["sample"] }
+pimalaya-config = { version = "0.6", default-features = false, features = ["sample"] }
 tempfile = { version = "3", default-features = false, features = ["getrandom"] }
 
 [dependencies]
@@ -65,7 +65,7 @@ nanohtml2text = { version = "0.3", default-features = false, optional = true }
 once_cell = { version = "1.21", default-features = false, features = ["std"] }
 ouroboros = { version = "0.18", default-features = false }
 pimalaya-cli = { version = "0.6", default-features = false, features = ["prompt", "terminal"], optional = true }
-pimalaya-config = { version = "0.5", default-features = false, features = ["toml"], optional = true }
+pimalaya-config = { version = "0.6", default-features = false, features = ["toml"], optional = true }
 regex = { version = "1.12", default-features = false, features = ["perf", "std", "unicode"] }
 schemars = { version = "1", default-features = false, features = ["derive", "std"], optional = true }
 serde = { version = "1", default-features = false, features = ["derive", "std"], optional = true }

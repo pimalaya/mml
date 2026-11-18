@@ -766,9 +766,9 @@ dependencies = [
 
 [[package]]
 name = "pimalaya-cli"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9d766697c997fe3ef5b1abc96d15967848a67f1c225a4f95e26782426ed1c94"
+checksum = "056e26afbb62acc7398ee2750e62c917e4c3552d92088fab4d4de941ae973dc9"
 dependencies = [
  "anyhow",
  "base64-codec",
@@ -778,6 +778,7 @@ dependencies = [
  "dirs",
  "env_logger",
  "inquire",
+ "libc",
  "log",
  "schemars",
  "serde",
@@ -790,9 +791,9 @@ dependencies = [
 
 [[package]]
 name = "pimalaya-config"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a8fe720198d49083f777f07b9f1617b6b387d4bcdbf69e38a3ab4e7f238e9a5"
+checksum = "ea8b9f87d962153c8bad8433f22444a8bbcddd8d2a3881a12be7789e90114956"
 dependencies = [
  "anyhow",
  "dirs",

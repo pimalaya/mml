@@ -126,6 +126,7 @@ MML joins the standard the Pimalaya CLIs share, as 2.0.0. MIGRATION.md lists wha
 
 ### Fixed
 
+- Fixed, through pimalaya-cli 0.6.1 and pimalaya-config 0.6.0, the text error report writing the control characters of its causes raw to the terminal (each line is sanitized, the suggestions naming `--json` when a character was replaced), `--log-file` creating the file under the umask and following a symbolic link (it is created at 0600 and a link is refused), the manual pages printing `vv<version>`, and a TOML parse error of the configuration printing its source line.
 - Fixed install.sh saving an HTTP error page as the archive and letting `tar` fail on it: it downloads with `curl -fsSLo` and stops on the error.
 - Fixed `compile` silently ignoring `sign` and `encrypt`, so a part marked `encrypt=pgpmime` compiled and shipped in the clear. `MmlCompileOptions::compile` now drives `MmlCompile` with no backend, which aborts on any crypto request. `MmlInterpretOptions::interpret` drives `MmlInterpret` the same way, so both paths and the coroutines share one implementation.
 
