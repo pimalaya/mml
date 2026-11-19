@@ -61,7 +61,7 @@ MML joins the standard the Pimalaya CLIs share, as 2.0.0. MIGRATION.md lists wha
 
 ### Changed
 
-- Changed the pimalaya-cli dependency of the `cli` feature to 0.6.
+- Changed the pimalaya-cli dependency of the `cli` feature to 0.7.
 - **BREAKING**: `-c, --config` takes one path per flag, repeated to merge several files, the first one the base. A value is no longer split on `:`.
 
 - **BREAKING**: a `-c` path that does not exist is refused, where it silently ran on the defaults. With no `-c`, a missing configuration is still the empty one, and every default location that exists is now read, each merged on top of the previous one.
